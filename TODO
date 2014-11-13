@@ -1,0 +1,29 @@
+Requisitos Funcionais:
+
+Para obter 5 pontos:
+1) Tipos: int, char, boolean, float, double, string
+2) Estruturas de controle: if/else, for, while, do-while, switch.
+3) Array bi-dimensional
+4) blocos
+5) Variáveis locais e globais, com escopo.
+6) Expressões com precedência e associatividade de operadores
+7) funções com parametros por valor e referência
+8) concatenação de strings com operador "+"
+9) entrada e saida padrao (printf e scanf)
+9) verificação de tipos
+10) verificação do número e tipo dos parâmetros de funções
+11) Operadores básicos: ( ) + - / * % && || ! > < >=
+
+Acima de 5 pontos:
+Pipes:
+Até 9 pontos:
+12) intervalo: [ 0 .. 10 ] 
+13) filter[ x % 2 == 0 ]
+14) forEach[ print( x ) ]
+15) firstN[ 10 ]
+16) lastN[ 10 ]
+17) sort[ x ]
+
+Para ter 10:
+18) split[ x > 6 ]( a, b )
+19) merge( a, b )[ x == y ]
