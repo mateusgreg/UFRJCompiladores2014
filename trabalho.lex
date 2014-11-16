@@ -4,6 +4,7 @@ NUMERO  [0-9]
 LETRA   [A-Za-z_]
 INT     {NUMERO}+
 DOUBLE  {NUMERO}+("."{NUMERO}+)?
+FLOAT   {DOUBLE}[Ff]
 CHAR    ['][^\n'][']
 BOOLEAN ([Tt][Rr][Uu][Ee])|([Ff][Aa][Ll][Ss][Ee])
 ID      {LETRA}({LETRA}|{NUMERO})*
@@ -11,15 +12,15 @@ ID_INC  (("<")({LETRA})*(".h")?(">")|(\")({LETRA})*(".h")?(\"))
 STR     (\"([^"]|\\\")*\")
 
 IF      [Ii][Ff]
-ELSE	[Ee][Ll][Ss][Ee]
+ELSE    [Ee][Ll][Ss][Ee]
 
 %%
 
 {LINHA}    { nlinha++; }
 {DELIM}    {}
-{STR}	   { return TK_STR; }	
+{STR}      { return TK_STR; }
 "main"     { return TK_MAIN; }
-{IF}   	   { return TK_IF; }
+{IF}       { return TK_IF; }
 {ELSE}     { return TK_ELSE; }
 "switch"   { return TK_SWITCH; }
 "case"     { return TK_CASE; }
@@ -47,13 +48,9 @@ ELSE	[Ee][Ll][Ss][Ee]
 {INT}      { return TK_CINT; }
 {BOOLEAN}  { return TK_CBOOLEAN; }
 {DOUBLE}   { return TK_CDOUBLE; }
-{DOUBLE}   { return TK_CFLOAT; }
+{FLOAT}    { return TK_CFLOAT; }
 {CHAR}     { return TK_CCHAR; }
 {STR}      { return TK_STR; }
 .          { return *yytext; }
 
 %%
-
- 
-
-
