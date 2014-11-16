@@ -39,7 +39,8 @@ CORPO : BLOCO
       | ';' 
       ;
 
-BLOCO : '{' VARIAVEIS COMANDOS '}' 
+BLOCO : '{' VARIAVEIS COMANDOS '}'
+      | '{' COMANDOS '}'
       ; 
 
 ARGUMENTOS : ARGUMENTO
