@@ -40,7 +40,6 @@ CORPO : BLOCO
       ;
 
 BLOCO : '{' VARIAVEIS COMANDOS '}'
-      | '{' COMANDOS '}'
       ; 
 
 ARGUMENTOS : ARGUMENTO
