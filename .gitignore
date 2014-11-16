@@ -26,6 +26,13 @@
 *.exe
 *.out
 *.app
+trabalho
+
+# Backup files
 
 *.*~
 *.*-swp
+
+# Lex and Yacc generated files
+*.yy.c
+*.tab.c
