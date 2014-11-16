@@ -13,7 +13,7 @@ int main() {
   printf("%d", b);
   
   if (a > b) {
-    int i;
+    a = b;
   }
   
 }
