@@ -60,9 +60,9 @@ VARIAVEIS : VARIAVEIS TIPO VAR ';'
 
 TIPO : TK_INT
      | TK_CHAR
-     | TK_BOOLEAN { cout << "tkn boolean."; }
-     | TK_FLOAT
-     | TK_DOUBLE
+     | TK_BOOLEAN { cout << "tkn boolean.\n"; }
+     | TK_FLOAT   { cout << "tkn float.\n"; }
+     | TK_DOUBLE  { cout << "tkn double.\n"; }
      | TK_STRING
      ;
 
@@ -91,8 +91,8 @@ COMANDO : CMD_ATRIB
         | CMD_SCANF
         ;
 
-CMD_IF_ELSE : TK_IF '(' OP ')' BLOCO TK_ELSE BLOCO
-            | TK_IF '(' OP ')' BLOCO
+CMD_IF_ELSE : TK_IF '(' OP ')' BLOCO TK_ELSE BLOCO  { cout << "cmd if-else.\n"; }
+            | TK_IF '(' OP ')' BLOCO  { cout << "cmd if.\n"; }
             ;
 
 CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OP ';' CMD_ATRIB ')' BLOCO
@@ -154,9 +154,9 @@ OP : F '+' F
 
 F : TK_CINT
   | TK_CCHAR
-  | TK_CBOOLEAN { cout << "cte boolean"; }
-  | TK_CFLOAT  { cout << "cte float."; }
-  | TK_CDOUBLE { cout << "cte double."; }
+  | TK_CBOOLEAN { cout << "cte boolean.\n"; }
+  | TK_CFLOAT  { cout << "cte float.\n"; }
+  | TK_CDOUBLE { cout << "cte double.\n"; }
   | TK_ID
   | TK_STR
   ;

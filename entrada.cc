@@ -1,4 +1,4 @@
-int main(){
+int main() {
   int a, b;
   boolean c;
   float d;
@@ -6,9 +6,14 @@ int main(){
   
   a = 2;
   b = 4;
-  c = true;
+  c = false;
   d = 4.0f;
   e = 4.0;
   
   printf("%d", b);
+  
+  if (a > b) {
+    int i;
+  }
+  
 }
