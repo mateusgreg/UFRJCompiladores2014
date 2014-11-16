@@ -60,7 +60,7 @@ VARIAVEIS : VARIAVEIS TIPO VAR ';'
 
 TIPO : TK_INT
      | TK_CHAR
-     | TK_BOOLEAN
+     | TK_BOOLEAN { cout << "tkn boolean."; }
      | TK_FLOAT
      | TK_DOUBLE
      | TK_STRING
@@ -76,8 +76,8 @@ ARRAY : '[' TK_CINT ']'
       ;
 
 COMANDOS : COMANDO ';' COMANDOS
-	   |
-	   ;
+         |
+         ;
 
 COMANDO : CMD_ATRIB
         | CMD_IF_ELSE
@@ -99,14 +99,14 @@ CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OP ';' CMD_ATRIB ')' BLOCO
         ;
 
 CMD_WHILE : TK_WHILE '(' OP ')' BLOCO
-	 	  ;
+          ;
 
 CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OP ')'
-	 	     ;
+             ;
 
 //#TK_ID deve ser apenas do tipo TK_INT
 CMD_SWITCH : TK_SWITCH '(' TK_ID ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}'
-	 	   ;
+           ;
 
 CMD_CASE : TK_CASE TK_CINT ':' COMANDOS CMD_CASE
          |
@@ -114,9 +114,9 @@ CMD_CASE : TK_CASE TK_CINT ':' COMANDOS CMD_CASE
 
 CMD_ATRIB : TK_ID '=' OP
           | TK_ID '[' INDICE ']' '=' F
-		  | TK_ID TK_ADICIONA_UM
-		  | TK_ID TK_DIMINUI_UM
-		  ;
+          | TK_ID TK_ADICIONA_UM
+          | TK_ID TK_DIMINUI_UM
+          ;
 
 CMD_RETURN : TK_RETURN F
            | TK_RETURN
@@ -154,9 +154,9 @@ OP : F '+' F
 
 F : TK_CINT
   | TK_CCHAR
-  | TK_CBOOLEAN
-  | TK_CFLOAT
-  | TK_CDOUBLE
+  | TK_CBOOLEAN { cout << "cte boolean"; }
+  | TK_CFLOAT  { cout << "cte float."; }
+  | TK_CDOUBLE { cout << "cte double."; }
   | TK_ID
   | TK_STR
   ;
