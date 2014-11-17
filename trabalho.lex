@@ -22,6 +22,9 @@ ELSE    [Ee][Ll][Ss][Ee]
 "main"     { return TK_MAIN; }
 {IF}       { return TK_IF; }
 {ELSE}     { return TK_ELSE; }
+"for"      { return TK_FOR; }
+"while"    { return TK_WHILE; }
+"do"       { return TK_DO; }
 "switch"   { return TK_SWITCH; }
 "case"     { return TK_CASE; }
 "default"  { return TK_DEFAULT; }
