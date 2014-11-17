@@ -13,7 +13,8 @@ int yyparse();
 void yyerror(const char *);
 %}
 
-%token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_INTERVAL TK_FILTER TK_FOR_EACH
+%token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT
+%token TK_INTERVAL TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT
 %token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
 %token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
 %token TK_CINT TK_CCHAR TK_CBOOLEAN TK_CFLOAT TK_CDOUBLE TK_STR
@@ -91,12 +92,12 @@ COMANDO_BLOCO : CMD_IF_ELSE
               | CMD_SWITCH
               | CMD_INTERVAL
               | CMD_FILTER
+              | CMD_FOREACH
               ;
 
 COMANDO : CMD_ATRIB
         | CMD_DO_WHILE
         | CMD_RETURN
-        | CMD_SORT
         | FUN_PROC
         | CMD_PRINTF
         | CMD_SCANF
@@ -128,17 +129,34 @@ CMD_CASE : TK_CASE INDICE ':' COMANDOS CMD_CASE { cout << "cmd switch-case.\n"; 
 CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_FUNCAO
              ;
 
-//#Primeiro F deve ser apenas TK_ID de item de array e os outros constantes
+//#Dentro de OP haverá acesso à variável INDEX que diz a posição em que o filtro se encontra
 CMD_FILTER : TK_FILTER '(' OP ')' BLOCO_FUNCAO
            ;
 
-//#Deve executar para cada item da array TK_ID
+//#TK_ID deve ser array
 CMD_FOREACH : TK_FOR_EACH '(' TK_ID ')' BLOCO_FUNCAO
             ;
 
 //#TK_ID deve ser array 
-CMD_SORT : TK_SORT '(' TK_ID ')'
+FUN_SORT : TK_SORT '(' TK_ID ')'
          ;
+
+//#TK_ID deve ser array
+FUN_FIRST_N : TK_FIRST_N '(' TK_ID ',' INDICE ')'
+            ;
+
+//#TK_ID deve ser array
+FUN_LAST_N : TK_LAST_N '(' TK_ID ',' INDICE ')'
+           ;
+
+//#Dentro de OP haverá acesso à variável INDEX que diz a posição em que o split se encontra
+//#O retorno é uma array bi-dimensional contendo as duas metades, uma em [0] e a outra em [1]
+FUN_SPLIT : TK_SPLIT  '(' TK_ID ',' OP ')'
+          ;
+
+//#Os TK_IDs devem ser arrays
+FUN_MERGE : TK_MERGE  '(' TK_ID ',' TK_ID ')'
+          ;
 
 CMD_ATRIB : TK_ID '=' OP
           | TK_ID '[' INDICE ']' '=' F
@@ -178,6 +196,11 @@ OP : F '+' F
    | TK_ID '[' INDICE ']'
    | TK_ID '(' PARAMS ')'
    | TK_ID '(' ')'
+   | FUN_SORT
+   | FUN_FIRST_N
+   | FUN_LAST_N
+   | FUN_SPLIT
+   | FUN_MERGE
    ;
 
 F : TK_CINT
