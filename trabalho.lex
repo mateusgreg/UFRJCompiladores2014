@@ -36,6 +36,10 @@ ID_INC  (("<")({LETRA})*(".h")?(">")|(\")({LETRA})*(".h")?(\"))
 {SWITCH}   { return TK_SWITCH; }
 {CASE}     { return TK_CASE; }
 {DEFAULT}  { return TK_DEFAULT; }
+"interval" { return TK_INTERVAL; }
+"filter"   { return TK_FILTER; }
+"forEach"  { return TK_FOR_EACH; }
+"sort"     { return TK_SORT; }
 
 "int"      { return TK_INT; }
 "char"     { return TK_CHAR; }
@@ -53,6 +57,7 @@ ID_INC  (("<")({LETRA})*(".h")?(">")|(\")({LETRA})*(".h")?(\"))
 "<="       { return TK_MENOR_IGUAL; }
 "++"       { return TK_ADICIONA_UM; }
 "--"       { return TK_DIMINUI_UM; }
+".."       { return TK_FROM_TO; }
 
 "printf"   { return TK_PRINTF; }
 "scanf"    { return TK_SCANF; }
