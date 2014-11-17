@@ -42,6 +42,10 @@ CORPO : BLOCO
 BLOCO : '{' VARIAVEIS COMANDOS '}'
       ; 
 
+BLOCO_FUNCAO : '{' VARIAVEIS COMANDOS '}'
+             | COMANDO ';'
+             ; 
+
 ARGUMENTOS : ARGUMENTO
            | 
            ;
@@ -76,29 +80,34 @@ ARRAY : '[' TK_CINT ']'
       ;
 
 COMANDOS : COMANDO ';' COMANDOS
+         | COMANDO_BLOCO COMANDOS
          |
          ;
 
+COMANDO_BLOCO : CMD_IF_ELSE
+              | CMD_FOR
+              | CMD_WHILE
+              | CMD_DO_WHILE
+              | CMD_SWITCH
+
 COMANDO : CMD_ATRIB
-        | CMD_IF_ELSE
-        | CMD_FOR
-        | CMD_WHILE
-        | CMD_DO_WHILE
-        | CMD_SWITCH
         | CMD_RETURN
         | CMD_PROC
         | CMD_PRINTF
         | CMD_SCANF
         ;
 
-CMD_IF_ELSE : TK_IF '(' OP ')' BLOCO TK_ELSE BLOCO  { cout << "cmd if-else.\n"; }
-            | TK_IF '(' OP ')' BLOCO  { cout << "cmd if.\n"; }
+CMD_IF_ELSE : TK_IF '(' OP ')' BLOCO_FUNCAO CMD_ELSE
             ;
 
-CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OP ';' CMD_ATRIB ')' BLOCO
+CMD_ELSE : TK_ELSE BLOCO_FUNCAO  { cout << "cmd if-else.\n"; }
+         | { cout << "cmd if.\n"; }
+         ;
+
+CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OP ';' CMD_ATRIB ')' BLOCO_FUNCAO
         ;
 
-CMD_WHILE : TK_WHILE '(' OP ')' BLOCO
+CMD_WHILE : TK_WHILE '(' OP ')' BLOCO_FUNCAO
           ;
 
 CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OP ')'
