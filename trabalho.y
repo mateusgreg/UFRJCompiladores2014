@@ -89,6 +89,7 @@ COMANDO_BLOCO : CMD_IF_ELSE
               | CMD_WHILE
               | CMD_DO_WHILE
               | CMD_SWITCH
+              ;
 
 COMANDO : CMD_ATRIB
         | CMD_RETURN
