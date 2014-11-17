@@ -13,10 +13,11 @@ int yyparse();
 void yyerror(const char *);
 %}
 
-%token TK_MAIN TK_ID TK_VALOR TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_RETURN TK_INT TK_CHAR 
-%token TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM
-%token TK_CINT TK_CCHAR TK_CBOOLEAN TK_CFLOAT TK_CDOUBLE TK_VOID
-%token TK_STR TK_PRINTF TK_SCANF
+%token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_INTERVAL TK_FILTER TK_FOR_EACH
+%token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
+%token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
+%token TK_CINT TK_CCHAR TK_CBOOLEAN TK_CFLOAT TK_CDOUBLE TK_STR
+%token TK_PRINTF TK_SCANF TK_RETURN
 
 %%
 
@@ -62,19 +63,19 @@ VARIAVEIS : VARIAVEIS TIPO VAR ';'
           | 
           ;
 
-TIPO : TK_INT     { cout << "tkn int.\n"; }
-     | TK_CHAR    { cout << "tkn char.\n"; }
+TIPO : TK_INT
+     | TK_CHAR
      | TK_BOOLEAN { cout << "tkn boolean.\n"; }
      | TK_FLOAT   { cout << "tkn float.\n"; }
      | TK_DOUBLE  { cout << "tkn double.\n"; }
-     | TK_STRING  { cout << "tkn string.\n"; }
+     | TK_STRING
      ;
 
 VAR : TK_ID ARRAY
     | TK_ID ARRAY ',' VAR
     ;
 
-ARRAY : '[' TK_CINT ']' 
+ARRAY : '[' TK_CINT ']' ARRAY
       | '[' ']'
       | 
       ;
@@ -88,12 +89,15 @@ COMANDO_BLOCO : CMD_IF_ELSE
               | CMD_FOR
               | CMD_WHILE
               | CMD_SWITCH
+              | CMD_INTERVAL
+              | CMD_FILTER
               ;
 
 COMANDO : CMD_ATRIB
         | CMD_DO_WHILE
         | CMD_RETURN
-        | CMD_PROC
+        | CMD_SORT
+        | FUN_PROC
         | CMD_PRINTF
         | CMD_SCANF
         ;
@@ -114,12 +118,26 @@ CMD_WHILE : TK_WHILE '(' OP ')' BLOCO_FUNCAO { cout << "cmd while.\n"; }
 CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OP ')' { cout << "cmd do-while.\n"; }
              ;
 
-//#TK_ID deve ser apenas do tipo TK_INT
-CMD_SWITCH : TK_SWITCH '(' TK_ID ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}' { cout << "cmd switch-default.\n"; }
+CMD_SWITCH : TK_SWITCH '(' INDICE ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}' { cout << "cmd switch-default.\n"; }
            ;
 
-CMD_CASE : TK_CASE TK_CINT ':' COMANDOS CMD_CASE { cout << "cmd switch-case.\n"; }
+CMD_CASE : TK_CASE INDICE ':' COMANDOS CMD_CASE { cout << "cmd switch-case.\n"; }
          |
+         ;
+
+CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_FUNCAO
+             ;
+
+//#Primeiro F deve ser apenas TK_ID de item de array e os outros constantes
+CMD_FILTER : TK_FILTER '(' OP ')' BLOCO_FUNCAO
+           ;
+
+//#Deve executar para cada item da array TK_ID
+CMD_FOREACH : TK_FOR_EACH '(' TK_ID ')' BLOCO_FUNCAO
+            ;
+
+//#TK_ID deve ser array 
+CMD_SORT : TK_SORT '(' TK_ID ')'
          ;
 
 CMD_ATRIB : TK_ID '=' OP
@@ -132,7 +150,7 @@ CMD_RETURN : TK_RETURN F
            | TK_RETURN
            ;
 
-CMD_PROC : TK_ID '(' ')'
+FUN_PROC : TK_ID '(' ')'
          | TK_ID '(' PARAMS ')'
          ;
 
@@ -175,6 +193,7 @@ PARAMS : F ',' PARAMS
        | F
        ;
 
+//#TK_ID deve ser apenas do tipo TK_INT
 INDICE : TK_CINT
        | TK_ID
        ;
