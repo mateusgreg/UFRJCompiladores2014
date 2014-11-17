@@ -62,12 +62,12 @@ VARIAVEIS : VARIAVEIS TIPO VAR ';'
           | 
           ;
 
-TIPO : TK_INT
-     | TK_CHAR
+TIPO : TK_INT     { cout << "tkn int.\n"; }
+     | TK_CHAR    { cout << "tkn char.\n"; }
      | TK_BOOLEAN { cout << "tkn boolean.\n"; }
      | TK_FLOAT   { cout << "tkn float.\n"; }
      | TK_DOUBLE  { cout << "tkn double.\n"; }
-     | TK_STRING
+     | TK_STRING  { cout << "tkn string.\n"; }
      ;
 
 VAR : TK_ID ARRAY
@@ -87,11 +87,11 @@ COMANDOS : COMANDO ';' COMANDOS
 COMANDO_BLOCO : CMD_IF_ELSE
               | CMD_FOR
               | CMD_WHILE
-              | CMD_DO_WHILE
               | CMD_SWITCH
               ;
 
 COMANDO : CMD_ATRIB
+        | CMD_DO_WHILE
         | CMD_RETURN
         | CMD_PROC
         | CMD_PRINTF
@@ -105,20 +105,20 @@ CMD_ELSE : TK_ELSE BLOCO_FUNCAO  { cout << "cmd if-else.\n"; }
          | { cout << "cmd if.\n"; }
          ;
 
-CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OP ';' CMD_ATRIB ')' BLOCO_FUNCAO
+CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OP ';' CMD_ATRIB ')' BLOCO_FUNCAO { cout << "cmd for.\n"; }
         ;
 
-CMD_WHILE : TK_WHILE '(' OP ')' BLOCO_FUNCAO
+CMD_WHILE : TK_WHILE '(' OP ')' BLOCO_FUNCAO { cout << "cmd while.\n"; }
           ;
 
-CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OP ')'
+CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OP ')' { cout << "cmd do-while.\n"; }
              ;
 
 //#TK_ID deve ser apenas do tipo TK_INT
-CMD_SWITCH : TK_SWITCH '(' TK_ID ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}'
+CMD_SWITCH : TK_SWITCH '(' TK_ID ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}' { cout << "cmd switch-default.\n"; }
            ;
 
-CMD_CASE : TK_CASE TK_CINT ':' COMANDOS CMD_CASE
+CMD_CASE : TK_CASE TK_CINT ':' COMANDOS CMD_CASE { cout << "cmd switch-case.\n"; }
          |
          ;
 
@@ -173,6 +173,7 @@ F : TK_CINT
 
 PARAMS : F ',' PARAMS
        | F
+       ;
 
 INDICE : TK_CINT
        | TK_ID
