@@ -40,6 +40,10 @@ ID_INC  (("<")({LETRA})*(".h")?(">")|(\")({LETRA})*(".h")?(\"))
 "filter"   { return TK_FILTER; }
 "forEach"  { return TK_FOR_EACH; }
 "sort"     { return TK_SORT; }
+"firstN"   { return TK_FIRST_N; }
+"lastN"    { return TK_LAST_N; }
+"split"    { return TK_SPLIT; }
+"merge"    { return TK_MERGE; }
 
 "int"      { return TK_INT; }
 "char"     { return TK_CHAR; }
