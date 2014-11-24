@@ -7,10 +7,64 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <map>
 
 using namespace std;
 
-#define YYSTYPE string
+const int MAX_STR = 256;
+
+struct Tipo {
+  string nome;
+  
+  Tipo() {}
+  Tipo( string nome ) {
+    this->nome = nome;
+  }
+};
+
+struct Atributo {
+  string v;  // Valor
+  Tipo   t;  // tipo
+  string c;  // codigo
+  
+  Atributo() {}  // inicializacao automatica para vazio ""
+  Atributo( string v, string t = "", string c = "" ) {
+    this->v = v;
+    this->t.nome = t;
+    this->c = c;
+  }
+};
+
+typedef map< string, Tipo > TS;
+TS ts; // Tabela de simbolos
+
+string pipeAtivo; // Tipo do pipe ativo
+
+Tipo tipoResultado( Tipo a, string operador, Tipo b );
+string geraTemp( Tipo tipo );
+string geraDeclaracaoTemporarias();
+string geraDeclaracaoVarPipe();
+
+void insereVariavelTS( TS&, string nomeVar, Tipo tipo );
+bool buscaVariavelTS( TS&, string nomeVar, Tipo* tipo );
+void erro( string msg );
+string toStr( int n );
+
+void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue );
+void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
+void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds );
+void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, 
+                                        const Atributo& cmdsThen,
+                                        const Atributo& cmdsElse );
+void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, 
+                                        const Atributo& cmdsThen );
+
+void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
+                                           const Atributo& id );
+                                           
+// Usando const Atributo& não cria cópia desnecessária
+
+#define YYSTYPE Atributo
 
 int yylex();
 int yyparse();
@@ -21,74 +75,97 @@ void yyerror(const char *);
 %token TK_INTERVAL TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT
 %token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
 %token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
-%token TK_CINT TK_CCHAR TK_CBOOLEAN TK_CFLOAT TK_CDOUBLE TK_STR
+%token CONST_INT CONST_CHAR CONST_BOOLEAN CONST_FLOAT CONST_DOUBLE CONST_STRING
 %token TK_PRINTF TK_SCANF TK_RETURN
+
+%nonassoc '<' '>' TK_IGUAL TK_MENOR_IGUAL TK_MAIOR_IGUAL TK_DIFERENTE
+%left TK_AND TK_OR 
+%left '+' '-' 
+%left '*' '/' '%' 
+%left '!'
 
 %%
 
 
-S : VARIAVEIS LISTAF { cout << "Aceito" << endl; } 
+S : VARIAVEIS LISTA_FUNCOES
+    { cout << "#include <stdio.h>\n"
+               "#include <stdlib.h>\n"
+               "#include <string.h>\n\n"
+            << $1.c << $2.c << endl; }
   ;
 
-LISTAF : FUN LISTAF 
-       | MAIN 
+LISTA_FUNCOES : FUNCAO LISTA_FUNCOES
+                { $$ = Atributo();
+                  $$.c = $1.c + $2.c; }
+              | MAIN
+                { $$ = Atributo(); }
+              ;
+
+FUNCAO : TIPO TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
+       | TK_VOID TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
        ;
 
-FUN : TIPO TK_ID '(' ARGUMENTOS ')' CORPO 
-    | TK_VOID TK_ID '(' ARGUMENTOS ')' CORPO 
-    ;
-
 MAIN : TK_INT TK_MAIN '(' ')' BLOCO 
+       { geraCodigoFuncaoPrincipal( &$$, $5 ); }
      ; 
 
-CORPO : BLOCO 
-      | ';' 
-      ;
+CORPO_DE_FUNCAO : BLOCO 
+                | ';' 
+                ;
 
 BLOCO : '{' VARIAVEIS COMANDOS '}'
       ; 
 
-BLOCO_FUNCAO : '{' VARIAVEIS COMANDOS '}'
-             | COMANDO ';'
-             ; 
+BLOCO_COMANDO : BLOCO
+              | COMANDO ';'
+              ; 
 
 ARGUMENTOS : ARGUMENTO
+//           | MULTI_ARGUMENTOS
            | 
            ;
 
-ARGUMENTO : TIPO NOMEARG ARRAY ',' ARGUMENTO 
-          | TIPO NOMEARG ARRAY 
+//MULTI_ARGUMENTOS : ARGUMENTO ',' MULTI_ARGUMENTOS
+//                 | ARGUMENTO
+//                 ;
+           
+ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO 
+          | TIPO TK_ID ARRAY 
           ;
 
-NOMEARG : TK_ID
-        |
-        ;
-
-VARIAVEIS : VARIAVEIS TIPO VAR ';' 
+VARIAVEIS : VARIAVEIS TIPO VARIAVEL ';' 
           | 
           ;
 
 TIPO : TK_INT
      | TK_CHAR
-     | TK_BOOLEAN { cout << "tkn boolean.\n"; }
-     | TK_FLOAT   { cout << "tkn float.\n"; }
-     | TK_DOUBLE  { cout << "tkn double.\n"; }
+     | TK_BOOLEAN
+     | TK_FLOAT
+     | TK_DOUBLE
      | TK_STRING
      ;
 
-VAR : TK_ID ARRAY
-    | TK_ID ARRAY ',' VAR
-    ;
+VARIAVEL : TK_ID ARRAY ',' VARIAVEL
+         | TK_ID ARRAY
+         ;
 
-ARRAY : '[' TK_CINT ']' ARRAY
+ARRAY : '[' CONST_INT ']' ARRAY
       | '[' ']'
       | 
       ;
 
-COMANDOS : COMANDO ';' COMANDOS
-         | COMANDO_BLOCO COMANDOS
+COMANDOS : COMANDO COMANDOS
          |
          ;
+
+COMANDO : CMD_ATRIB ';'
+        | CMD_DO_WHILE ';'
+        | CMD_RETURN ';'
+        | FUN_PROC ';'
+        | CMD_PRINTF ';'
+        | CMD_SCANF ';'
+        | COMANDO_BLOCO
+        ;
 
 COMANDO_BLOCO : CMD_IF_ELSE
               | CMD_FOR
@@ -99,46 +176,38 @@ COMANDO_BLOCO : CMD_IF_ELSE
               | CMD_FOREACH
               ;
 
-COMANDO : CMD_ATRIB
-        | CMD_DO_WHILE
-        | CMD_RETURN
-        | FUN_PROC
-        | CMD_PRINTF
-        | CMD_SCANF
-        ;
-
-CMD_IF_ELSE : TK_IF '(' OP ')' BLOCO_FUNCAO CMD_ELSE
+CMD_IF_ELSE : TK_IF '(' OPERACAO ')' BLOCO_COMANDO CMD_ELSE
             ;
 
-CMD_ELSE : TK_ELSE BLOCO_FUNCAO  { cout << "cmd if-else.\n"; }
-         | { cout << "cmd if.\n"; }
-         ;
-
-CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OP ';' CMD_ATRIB ')' BLOCO_FUNCAO { cout << "cmd for.\n"; }
-        ;
-
-CMD_WHILE : TK_WHILE '(' OP ')' BLOCO_FUNCAO { cout << "cmd while.\n"; }
-          ;
-
-CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OP ')' { cout << "cmd do-while.\n"; }
-             ;
-
-CMD_SWITCH : TK_SWITCH '(' INDICE ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}' { cout << "cmd switch-default.\n"; }
-           ;
-
-CMD_CASE : TK_CASE INDICE ':' COMANDOS CMD_CASE { cout << "cmd switch-case.\n"; }
+CMD_ELSE : TK_ELSE BLOCO_COMANDO
          |
          ;
 
-CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_FUNCAO
+CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OPERACAO ';' CMD_ATRIB ')' BLOCO_COMANDO
+        ;
+
+CMD_WHILE : TK_WHILE '(' OPERACAO ')' BLOCO_COMANDO 
+          ;
+
+CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OPERACAO ')'
              ;
 
-//#Dentro de OP haverá acesso à variável INDEX que diz a posição em que o filtro se encontra
-CMD_FILTER : TK_FILTER '(' OP ')' BLOCO_FUNCAO
+CMD_SWITCH : TK_SWITCH '(' INDICE ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}' 
+           ;
+
+CMD_CASE : TK_CASE INDICE ':' COMANDOS CMD_CASE 
+         |
+         ;
+
+CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
+             ;
+
+//#Dentro de OPERACAO haverá acesso à variável INDEX que diz a posição em que o filtro se encontra
+CMD_FILTER : TK_FILTER '(' OPERACAO ')' BLOCO_COMANDO
            ;
 
 //#TK_ID deve ser array
-CMD_FOREACH : TK_FOR_EACH '(' TK_ID ')' BLOCO_FUNCAO
+CMD_FOREACH : TK_FOR_EACH '(' TK_ID ')' BLOCO_COMANDO
             ;
 
 //#TK_ID deve ser array 
@@ -153,82 +222,77 @@ FUN_FIRST_N : TK_FIRST_N '(' TK_ID ',' INDICE ')'
 FUN_LAST_N : TK_LAST_N '(' TK_ID ',' INDICE ')'
            ;
 
-//#Dentro de OP haverá acesso à variável INDEX que diz a posição em que o split se encontra
+//#Dentro de OPERACAO haverá acesso à variável INDEX que diz a posição em que o split se encontra
 //#O retorno é uma array bi-dimensional contendo as duas metades, uma em [0] e a outra em [1]
-FUN_SPLIT : TK_SPLIT  '(' TK_ID ',' OP ')'
+FUN_SPLIT : TK_SPLIT  '(' TK_ID ',' OPERACAO ')'
           ;
 
 //#Os TK_IDs devem ser arrays
 FUN_MERGE : TK_MERGE  '(' TK_ID ',' TK_ID ')'
           ;
 
-CMD_ATRIB : TK_ID '=' OP
-          | TK_ID '[' INDICE ']' '=' F
+CMD_ATRIB : TK_ID '=' OPERACAO
+          | TK_ID '[' INDICE ']' '=' VALOR
           | TK_ID TK_ADICIONA_UM
           | TK_ID TK_DIMINUI_UM
           ;
 
-CMD_RETURN : TK_RETURN F
+CMD_RETURN : TK_RETURN VALOR
            | TK_RETURN
            ;
 
 FUN_PROC : TK_ID '(' ')'
-         | TK_ID '(' PARAMS ')'
+         | TK_ID '(' PARAMETROS ')'
          ;
 
-OP : F '+' F
-   | F '-' F
-   | F '*' F
-   | F '/' F
-   | F '%' F
-   | F TK_AND F
-   | F TK_OR F
-   | F TK_IGUAL F
-   | F '>' F
-   | F '<' F
-   | F '|' F
-   | F '&' F
-   | F '^' F
-   | '~' F
-   | F TK_MENOR_IGUAL F
-   | F TK_MAIOR_IGUAL F
-   | F TK_DIFERENTE F
-   | F 
-   | '+' F 
-   | '-' F 
-   | '!' F
-   | TK_ID '[' INDICE ']'
-   | TK_ID '(' PARAMS ')'
-   | TK_ID '(' ')'
-   | FUN_SORT
-   | FUN_FIRST_N
-   | FUN_LAST_N
-   | FUN_SPLIT
-   | FUN_MERGE
-   ;
+OPERACAO : OPERACAO '+' OPERACAO
+         | OPERACAO '-' OPERACAO
+         | OPERACAO '*' OPERACAO
+         | OPERACAO '/' OPERACAO
+         | OPERACAO '%' OPERACAO
+         | OPERACAO TK_AND OPERACAO
+         | OPERACAO TK_OR OPERACAO
+         | OPERACAO TK_IGUAL OPERACAO
+         | OPERACAO '>' OPERACAO
+         | OPERACAO '<' OPERACAO
+         | OPERACAO TK_MENOR_IGUAL OPERACAO
+         | OPERACAO TK_MAIOR_IGUAL OPERACAO
+         | OPERACAO TK_DIFERENTE OPERACAO
+         | '!' OPERACAO
+         | '(' OPERACAO ')'
+         | TK_ID '[' INDICE ']'
+         | TK_ID '(' PARAMETROS ')'
+         | TK_ID '(' ')'
+         | FUN_SORT
+         | FUN_FIRST_N
+         | FUN_LAST_N
+         | FUN_SPLIT
+         | FUN_MERGE
+         | VALOR
+         ;
 
-F : TK_CINT
-  | TK_CCHAR
-  | TK_CBOOLEAN { cout << "cte boolean.\n"; }
-  | TK_CFLOAT  { cout << "cte float.\n"; }
-  | TK_CDOUBLE { cout << "cte double.\n"; }
-  | TK_ID
-  | TK_STR
-  ;
+VALOR : CONST_INT
+      | CONST_CHAR
+      | CONST_BOOLEAN
+      | CONST_FLOAT
+      | CONST_DOUBLE
+      | CONST_STRING
+      | TK_ID
+      ;
 
-PARAMS : F ',' PARAMS
-       | F
-       ;
+PARAMETROS : VALOR ',' PARAMETROS
+           | VALOR
+           ;
 
 //#TK_ID deve ser apenas do tipo TK_INT
-INDICE : TK_CINT
+INDICE : CONST_INT
        | TK_ID
        ;
        
-CMD_PRINTF : TK_PRINTF '(' TK_STR ',' F ')'
+CMD_PRINTF : TK_PRINTF '(' CONST_STRING ',' VALOR ')'
            ;
            
-CMD_SCANF : TK_SCANF '(' TK_STR ',' '&' TK_ID ')'
+CMD_SCANF : TK_SCANF '(' CONST_STRING ',' '&' TK_ID ')'
           ;
 %%
 int nlinha = 1;
@@ -241,6 +305,56 @@ void yyerror( const char* st )
 {
   puts( st );
   printf( "Linha: %d\nPerto de: '%s'\n", nlinha, yytext );
+}
+
+map<string,int> n_var_temp;
+
+string geraDeclaracaoVarPipe() {
+  return "  int x_int;\n"
+         "  double x_double;\n"
+         "  float x_float;\n";
+}
+
+string geraDeclaracaoTemporarias() {
+  string c;
+  
+  for( int i = 0; i < n_var_temp["bool"]; i++ )
+    c += "  int temp_bool_" + toStr( i + 1 ) + ";\n";
+    
+  for( int i = 0; i < n_var_temp["int"]; i++ )
+    c += "  int temp_int_" + toStr( i + 1 ) + ";\n";
+
+    for( int i = 0; i < n_var_temp["char"]; i++ )
+    c += "  char temp_char_" + toStr( i + 1 ) + ";\n";
+    
+  for( int i = 0; i < n_var_temp["double"]; i++ )
+    c += "  double temp_double_" + toStr( i + 1 ) + ";\n";
+
+    for( int i = 0; i < n_var_temp["float"]; i++ )
+    c += "  float temp_float_" + toStr( i + 1 ) + ";\n";
+    
+  for( int i = 0; i < n_var_temp["string"]; i++ )
+    c += "  char temp_string_" + toStr( i + 1 ) + "[" + toStr( MAX_STR )+ "];\n";
+    
+  return c;  
+}
+
+void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
+  *SS = Atributo();
+  SS->c = "\nint main() {\n" +
+           geraDeclaracaoVarPipe() + 
+           "\n" + 
+           geraDeclaracaoTemporarias() + 
+           "\n" +
+           cmds.c + 
+           "  return 0;\n" 
+           "}\n";
+}  
+
+string toStr( int n ) {
+  char buf[1024] = ""; 
+  sprintf( buf, "%d", n );
+  return buf;
 }
 
 int main( int argc, char* argv[] )

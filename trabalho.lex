@@ -2,6 +2,7 @@ NUMERO  [0-9]
 LETRA   [A-Za-z_]
 DELIM   [\t ]
 LINHA   [\n]
+MAIN	[Mm][Aa][Ii][Nn]
 
 IF      [Ii][Ff]
 ELSE    [Ee][Ll][Ss][Ee]
@@ -19,61 +20,62 @@ CHAR    ['][^\n'][']
 BOOLEAN ([Tt][Rr][Uu][Ee])|([Ff][Aa][Ll][Ss][Ee])
 STR     (\"([^"]|\\\")*\")
 
-ID      {LETRA}({LETRA}|{NUMERO})*
+ID      ({LETRA}({LETRA}|{NUMERO})*)
 ID_INC  (("<")({LETRA})*(".h")?(">")|(\")({LETRA})*(".h")?(\"))
 
 %%
 
 {LINHA}    { nlinha++; }
 {DELIM}    {}
-"main"     { return TK_MAIN; }
+{MAIN}     { return TK_MAIN; }
 
-{IF}       { return TK_IF; }
-{ELSE}     { return TK_ELSE; }
-{FOR}      { return TK_FOR; }
-{WHILE}    { return TK_WHILE; }
-{DO}       { return TK_DO; }
-{SWITCH}   { return TK_SWITCH; }
-{CASE}     { return TK_CASE; }
-{DEFAULT}  { return TK_DEFAULT; }
-"interval" { return TK_INTERVAL; }
-"filter"   { return TK_FILTER; }
-"forEach"  { return TK_FOR_EACH; }
-"sort"     { return TK_SORT; }
-"firstN"   { return TK_FIRST_N; }
-"lastN"    { return TK_LAST_N; }
-"split"    { return TK_SPLIT; }
-"merge"    { return TK_MERGE; }
+{IF}       { yylval = Atributo( yytext ); return TK_IF; }
+{ELSE}     { yylval = Atributo( yytext ); return TK_ELSE; }
+{FOR}      { yylval = Atributo( yytext ); return TK_FOR; }
+{WHILE}    { yylval = Atributo( yytext ); return TK_WHILE; }
+{DO}       { yylval = Atributo( yytext ); return TK_DO; }
+{SWITCH}   { yylval = Atributo( yytext ); return TK_SWITCH; }
+{CASE}     { yylval = Atributo( yytext ); return TK_CASE; }
+{DEFAULT}  { yylval = Atributo( yytext ); return TK_DEFAULT; }
+"interval" { yylval = Atributo( yytext ); return TK_INTERVAL; }
+"filter"   { yylval = Atributo( yytext ); return TK_FILTER; }
+"forEach"  { yylval = Atributo( yytext ); return TK_FOR_EACH; }
+"sort"     { yylval = Atributo( yytext ); return TK_SORT; }
+"firstN"   { yylval = Atributo( yytext ); return TK_FIRST_N; }
+"lastN"    { yylval = Atributo( yytext ); return TK_LAST_N; }
+"split"    { yylval = Atributo( yytext ); return TK_SPLIT; }
+"merge"    { yylval = Atributo( yytext ); return TK_MERGE; }
 
-"int"      { return TK_INT; }
-"char"     { return TK_CHAR; }
-"float"    { return TK_FLOAT; }
-"double"   { return TK_DOUBLE; }
-"boolean"  { return TK_BOOLEAN; }
-"string"   { return TK_STRING; }
-"void"     { return TK_VOID; }
+"int"      { yylval = Atributo( "", yytext ); return TK_INT; }
+"char"     { yylval = Atributo( "", yytext ); return TK_CHAR; }
+"float"    { yylval = Atributo( "", yytext ); return TK_FLOAT; }
+"double"   { yylval = Atributo( "", yytext ); return TK_DOUBLE; }
+"boolean"  { yylval = Atributo( "", yytext ); return TK_BOOLEAN; }
+"string"   { yylval = Atributo( "", yytext ); return TK_STRING; }
+"void"     { yylval = Atributo( "", yytext ); return TK_VOID; }
 
-"&&"       { return TK_AND; }
-"||"       { return TK_OR; }
-"=="       { return TK_IGUAL; }
-"!="       { return TK_DIFERENTE; }
-">="       { return TK_MAIOR_IGUAL; }
-"<="       { return TK_MENOR_IGUAL; }
-"++"       { return TK_ADICIONA_UM; }
-"--"       { return TK_DIMINUI_UM; }
-".."       { return TK_FROM_TO; }
+"&&"       { yylval = Atributo( yytext ); return TK_AND; }
+"||"       { yylval = Atributo( yytext ); return TK_OR; }
+"=="       { yylval = Atributo( yytext ); return TK_IGUAL; }
+"!="       { yylval = Atributo( yytext ); return TK_DIFERENTE; }
+">="       { yylval = Atributo( yytext ); return TK_MAIOR_IGUAL; }
+"<="       { yylval = Atributo( yytext ); return TK_MENOR_IGUAL; }
+"++"       { yylval = Atributo( yytext ); return TK_ADICIONA_UM; }
+"--"       { yylval = Atributo( yytext ); return TK_DIMINUI_UM; }
+".."       { yylval = Atributo( yytext ); return TK_FROM_TO; }
 
-"printf"   { return TK_PRINTF; }
-"scanf"    { return TK_SCANF; }
-"return"   { return TK_RETURN; }
+"printf"   { yylval = Atributo( yytext ); return TK_PRINTF; }
+"scanf"    { yylval = Atributo( yytext ); return TK_SCANF; }
+"return"   { yylval = Atributo( yytext ); return TK_RETURN; }
 
-{ID}       { return TK_ID; }
-{INT}      { return TK_CINT; }
-{BOOLEAN}  { return TK_CBOOLEAN; }
-{DOUBLE}   { return TK_CDOUBLE; }
-{FLOAT}    { return TK_CFLOAT; }
-{CHAR}     { return TK_CCHAR; }
-{STR}      { return TK_STR; }
-.          { return *yytext; }
+{INT}      { yylval = Atributo( yytext ); return CONST_INT; }
+{BOOLEAN}  { yylval = Atributo( yytext ); return CONST_BOOLEAN; }
+{DOUBLE}   { yylval = Atributo( yytext ); return CONST_DOUBLE; }
+{FLOAT}    { yylval = Atributo( yytext ); return CONST_FLOAT; }
+{CHAR}     { yylval = Atributo( yytext ); return CONST_CHAR; }
+{STR}      { yylval = Atributo( yytext ); return CONST_STRING; }
+
+{ID}       { yylval = Atributo( yytext ); return TK_ID; }
+.          { yylval = Atributo( yytext ); return *yytext; }
 
 %%
