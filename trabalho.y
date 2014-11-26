@@ -39,9 +39,11 @@ typedef map< string, Tipo > TS;
 TS ts; // Tabela de simbolos
 
 string pipeAtivo; // Tipo do pipe ativo
+string passoPipeAtivo; // Label 'fim' do pipe ativo
 
 Tipo tipoResultado( Tipo a, string operador, Tipo b );
 string geraTemp( Tipo tipo );
+string geraLabel( string cmd );
 string geraDeclaracaoTemporarias();
 string geraDeclaracaoVarPipe();
 
@@ -58,6 +60,11 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr,
                                         const Atributo& cmdsElse );
 void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, 
                                         const Atributo& cmdsThen );
+void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
+                                  const Atributo& condicao, 
+                                  const Atributo& passo, 
+                                  const Atributo& cmds );
+void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
                                            const Atributo& id );
@@ -86,11 +93,10 @@ void yyerror(const char *);
 
 %%
 
-
 S : VARIAVEIS LISTA_FUNCOES
     { cout << "#include <stdio.h>\n"
                "#include <stdlib.h>\n"
-               "#include <string.h>\n\n"
+               "#include <string.h>\n"
             << $1.c << $2.c << endl; }
   ;
 
@@ -98,31 +104,49 @@ LISTA_FUNCOES : FUNCAO LISTA_FUNCOES
                 { $$ = Atributo();
                   $$.c = $1.c + $2.c; }
               | MAIN
-                { $$ = Atributo(); }
+                { $$ = $1; }
               ;
 
 FUNCAO : TIPO TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
        | TK_VOID TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
        ;
 
-MAIN : TK_INT TK_MAIN '(' ')' BLOCO 
-       { geraCodigoFuncaoPrincipal( &$$, $5 ); }
+MAIN : TK_INT TK_MAIN '(' ')' MAIN_BLOCO 
+       { $$ = Atributo();
+         $$.c = "\nint main()" + $5.c + "\n";
+       }
      ; 
 
+MAIN_BLOCO : '{' VARIAVEIS COMANDOS '}'
+             { $$ = Atributo();
+               $$.c = "{\n" + geraDeclaracaoVarPipe() + "\n" + 
+			      geraDeclaracaoTemporarias() + "\n" +
+			      $2.c + $3.c + 
+                      "  return 0;\n}"; }
+           ; 
+     
 CORPO_DE_FUNCAO : BLOCO 
-                | ';' 
+		  { $$ = $1; }
+                | ';'
+                  { $$ = Atributo();
+                    $$.c = ';'; }
                 ;
 
 BLOCO : '{' VARIAVEIS COMANDOS '}'
+        { $$ = Atributo();
+          $$.c = "{" + $2.c + $3.c + "}"; }
       ; 
 
 BLOCO_COMANDO : BLOCO
+		{ $$ = $1; }
               | COMANDO ';'
+                { $$ = $1; }
               ; 
 
 ARGUMENTOS : ARGUMENTO
+             { $$ = $1; }
 //           | MULTI_ARGUMENTOS
-           | 
+           | { $$ = Atributo(); }
            ;
 
 //MULTI_ARGUMENTOS : ARGUMENTO ',' MULTI_ARGUMENTOS
@@ -133,8 +157,10 @@ ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO
           | TIPO TK_ID ARRAY 
           ;
 
-VARIAVEIS : VARIAVEIS TIPO VARIAVEL ';' 
-          | 
+VARIAVEIS : VARIAVEIS VARIAVEL ';' 
+            { $$ = Atributo(); 
+              $$.c = " " + $1.c + " " + $2.c;}
+          | { $$ = Atributo(); }
           ;
 
 TIPO : TK_INT
@@ -145,26 +171,46 @@ TIPO : TK_INT
      | TK_STRING
      ;
 
-VARIAVEL : TK_ID ARRAY ',' VARIAVEL
-         | TK_ID ARRAY
+VARIAVEL : VARIAVEL ',' TK_ID ARRAY
+           { insereVariavelTS( ts, $3.v, $1.t ); 
+             geraDeclaracaoVariavel( &$$, $1, $3 );}
+         | TIPO TK_ID ARRAY
+           { insereVariavelTS( ts, $2.v, $1.t ); 
+             geraDeclaracaoVariavel( &$$, $1, $2 );}
          ;
 
 ARRAY : '[' CONST_INT ']' ARRAY
       | '[' ']'
-      | 
+        { $$ = Atributo();
+          $$.c = "[]";}
+      | { $$ = Atributo(); }
       ;
 
 COMANDOS : COMANDO COMANDOS
-         |
+           { $$ = Atributo();
+             $$.c = $1.c + $2.c;}
+         | { $$ = Atributo(); }
          ;
 
 COMANDO : CMD_ATRIB ';'
+          {$$ = $1; }
         | CMD_DO_WHILE ';'
+          {$$ = $1;
+           $$.c += ";"; }
         | CMD_RETURN ';'
+          {$$ = $1;
+           $$.c += ";"; }
         | FUN_PROC ';'
+          {$$ = $1;
+           $$.c += ";"; }
         | CMD_PRINTF ';'
+          {$$ = $1;
+           $$.c += ";"; }
         | CMD_SCANF ';'
+          {$$ = $1;
+           $$.c += ";"; }
         | COMANDO_BLOCO
+          {$$ = $1; }
         ;
 
 COMANDO_BLOCO : CMD_IF_ELSE
@@ -232,6 +278,7 @@ FUN_MERGE : TK_MERGE  '(' TK_ID ',' TK_ID ')'
           ;
 
 CMD_ATRIB : TK_ID '=' OPERACAO
+            { geraCodigoAtribuicao( &$$, $1, $3 );}
           | TK_ID '[' INDICE ']' '=' VALOR
           | TK_ID TK_ADICIONA_UM
           | TK_ID TK_DIMINUI_UM
@@ -246,6 +293,8 @@ FUN_PROC : TK_ID '(' ')'
          ;
 
 OPERACAO : OPERACAO '+' OPERACAO
+           { $$ = Atributo();
+             $$.c =  $1.c + " + " + $3.c;}
          | OPERACAO '-' OPERACAO
          | OPERACAO '*' OPERACAO
          | OPERACAO '/' OPERACAO
@@ -272,10 +321,16 @@ OPERACAO : OPERACAO '+' OPERACAO
          ;
 
 VALOR : CONST_INT
+        {  $$.v = $1.v; 
+           $$.t = Tipo( "int" ); }
       | CONST_CHAR
       | CONST_BOOLEAN
       | CONST_FLOAT
+        {  $$.v = $1.v; 
+           $$.t = Tipo( "float" ); }
       | CONST_DOUBLE
+        {  $$.v = $1.v; 
+           $$.t = Tipo( "double" ); }
       | CONST_STRING
       | TK_ID
       ;
@@ -339,6 +394,36 @@ string geraDeclaracaoTemporarias() {
   return c;  
 }
 
+void insereVariavelTS( TS& ts, string nomeVar, Tipo tipo ) {
+  if( !buscaVariavelTS( ts, nomeVar, &tipo ) )
+    ts[nomeVar] = tipo;
+  else  
+    erro( "Variavel já definida: " + nomeVar );
+}
+
+bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
+  if( ts.find( nomeVar ) != ts.end() ) {
+    *tipo = ts[ nomeVar ];
+    return true;
+  }
+  else
+    return false;
+}
+
+void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
+                                           const Atributo& id ) {
+  SS->v = "";
+  SS->t = tipo.t;
+  if( tipo.t.nome == "string" ) {
+    SS->c = tipo.c + 
+           "char " + id.v + "["+ toStr( MAX_STR ) +"];\n";   
+  }
+  else {
+    SS->c = tipo.c + 
+            tipo.t.nome + " " + id.v + ";\n";
+  }
+}
+
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
   *SS = Atributo();
   SS->c = "\nint main() {\n" +
@@ -351,10 +436,38 @@ void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
            "}\n";
 }  
 
+void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, 
+                                         const Atributo& rvalue ) {
+  if( buscaVariavelTS( ts, lvalue.v, &lvalue.t ) ) {
+    if( lvalue.t.nome == rvalue.t.nome ) {
+      if( lvalue.t.nome == "string" ) {
+        SS->c = lvalue.c + rvalue.c + 
+                "  strncpy( " + lvalue.v + ", " + rvalue.v + ", " + 
+                            toStr( MAX_STR - 1 ) + " );\n" +
+                "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
+      }
+      else
+        SS->c = lvalue.c + rvalue.c + 
+                "  " + lvalue.v + " = " + rvalue.v + ";\n"; 
+    }
+    else
+      erro( "Expressao " + rvalue.t.nome + 
+            " nao pode ser atribuida a variavel " +
+            lvalue.t.nome );
+    } 
+    else
+      erro( "Variavel nao declarada: " + lvalue.v );
+}      
+
 string toStr( int n ) {
   char buf[1024] = ""; 
   sprintf( buf, "%d", n );
   return buf;
+}
+
+void erro( string msg ) {
+  yyerror( msg.c_str() );
+  exit(0);
 }
 
 int main( int argc, char* argv[] )

@@ -1,5 +1,7 @@
 all: trabalho entrada.cc
-	./trabalho < entrada.cc
+	./trabalho < entrada.cc > saida.c
+	g++ -o saida saida.c
+	./saida
 
 lex.yy.c: trabalho.lex
 	lex trabalho.lex
