@@ -1,4 +1,4 @@
-//Fabio de Matos Carrilho. DRE: 111031170
+//Fabio de Matos Carrilho.  DRE: 111031170
 //Mateus Gregorio de Souza. DRE: 109062660
 //Vitor Marques de Miranda. DRE: 111222886
 
@@ -95,8 +95,8 @@ void yyerror(const char *);
 
 S : VARIAVEIS LISTA_FUNCOES
     { cout << "#include <stdio.h>\n"
-               "#include <stdlib.h>\n"
-               "#include <string.h>\n"
+              "#include <stdlib.h>\n"
+              "#include <string.h>\n"
             << $1.c << $2.c << endl; }
   ;
 
@@ -159,7 +159,7 @@ ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO
 
 VARIAVEIS : VARIAVEIS VARIAVEL ';' 
             { $$ = Atributo(); 
-              $$.c = " " + $1.c + " " + $2.c;}
+              $$.c = $1.c + "  " + $2.c;}
           | { $$ = Atributo(); }
           ;
 
@@ -293,8 +293,7 @@ FUN_PROC : TK_ID '(' ')'
          ;
 
 OPERACAO : OPERACAO '+' OPERACAO
-           { $$ = Atributo();
-             $$.c =  $1.c + " + " + $3.c;}
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO '-' OPERACAO
          | OPERACAO '*' OPERACAO
          | OPERACAO '/' OPERACAO
@@ -333,6 +332,11 @@ VALOR : CONST_INT
            $$.t = Tipo( "double" ); }
       | CONST_STRING
       | TK_ID
+        { if( buscaVariavelTS( ts, $1.v, &$$.t ) ) 
+             $$.v = $1.v; 
+          else
+             erro( "Variavel nao declarada: " + $1.v );
+        }
       ;
 
 PARAMETROS : VALOR ',' PARAMETROS
@@ -351,6 +355,9 @@ CMD_SCANF : TK_SCANF '(' CONST_STRING ',' '&' TK_ID ')'
           ;
 %%
 int nlinha = 1;
+map<string,int> n_var_temp;
+map<string,Tipo> resultadoOperador;
+map<string,int> label;
 
 #include "lex.yy.c"
 
@@ -361,8 +368,6 @@ void yyerror( const char* st )
   puts( st );
   printf( "Linha: %d\nPerto de: '%s'\n", nlinha, yytext );
 }
-
-map<string,int> n_var_temp;
 
 string geraDeclaracaoVarPipe() {
   return "  int x_int;\n"
@@ -392,6 +397,10 @@ string geraDeclaracaoTemporarias() {
     c += "  char temp_string_" + toStr( i + 1 ) + "[" + toStr( MAX_STR )+ "];\n";
     
   return c;  
+}
+
+string geraTemp( Tipo tipo ) {
+  return "temp_" + tipo.nome + "_" + toStr( ++n_var_temp[tipo.nome] );
 }
 
 void insereVariavelTS( TS& ts, string nomeVar, Tipo tipo ) {
@@ -459,6 +468,46 @@ void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue,
       erro( "Variavel nao declarada: " + lvalue.v );
 }      
 
+void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 ) {
+  SS->t = tipoResultado( S1.t, S2.v, S3.t );
+  SS->v = geraTemp( SS->t );
+
+  if( SS->t.nome == "string" ) {
+    // Falta o operador de comparação para string
+    SS->c = S1.c + S3.c + 
+            "\n  strncpy( " + SS->v + ", " + S1.v + ", " + 
+                        toStr( MAX_STR - 1 ) + " );\n" +
+            "  strncat( " + SS->v + ", " + S3.v + ", " + 
+                        toStr( MAX_STR - 1 ) + " );\n" +
+            "  " + SS->v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n\n";    
+  }
+  else
+    SS->c = S1.c + S3.c + 
+            "  " + SS->v + " = " + S1.v + " " + S2.v + " " + S3.v + ";\n";
+}
+
+Tipo tipoResultado( Tipo a, string operador, Tipo b ) {
+  if( resultadoOperador.find( a.nome + operador + b.nome ) == resultadoOperador.end() )
+    erro( "Operacao nao permitida: " + a.nome + operador + b.nome );
+
+  return resultadoOperador[a.nome + operador + b.nome];
+}
+
+void inicializaResultadoOperador() {
+  resultadoOperador["string+string"] = Tipo( "string" );
+  resultadoOperador["int+int"] = Tipo( "int" );
+  resultadoOperador["int-int"] = Tipo( "int" );
+  resultadoOperador["int*int"] = Tipo( "int" );
+  resultadoOperador["int==int"] = Tipo( "bool" );
+  resultadoOperador["int%int"] = Tipo( "int" );
+  resultadoOperador["int/int"] = Tipo( "int" );
+  resultadoOperador["int<int"] = Tipo( "bool" );
+  resultadoOperador["int>int"] = Tipo( "bool" );
+  resultadoOperador["double+int"] = Tipo( "double" );
+  resultadoOperador["int*double"] = Tipo( "double" );
+  // TODO: completar essa lista... :(
+}
+
 string toStr( int n ) {
   char buf[1024] = ""; 
   sprintf( buf, "%d", n );
@@ -470,7 +519,7 @@ void erro( string msg ) {
   exit(0);
 }
 
-int main( int argc, char* argv[] )
-{
+int main( int argc, char* argv[] ) {
+  inicializaResultadoOperador();
   yyparse();
 }
