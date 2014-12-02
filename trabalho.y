@@ -295,17 +295,29 @@ FUN_PROC : TK_ID '(' ')'
 OPERACAO : OPERACAO '+' OPERACAO
            { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO '-' OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO '*' OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO '/' OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO '%' OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO TK_AND OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO TK_OR OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO TK_IGUAL OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO '>' OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO '<' OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO TK_MENOR_IGUAL OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO TK_MAIOR_IGUAL OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | OPERACAO TK_DIFERENTE OPERACAO
+           { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | '!' OPERACAO
          | '(' OPERACAO ')'
          | TK_ID '[' INDICE ']'
@@ -324,6 +336,8 @@ VALOR : CONST_INT
            $$.t = Tipo( "int" ); }
       | CONST_CHAR
       | CONST_BOOLEAN
+        {  $$.v = $1.v; 
+           $$.t = Tipo( "bool" ); }
       | CONST_FLOAT
         {  $$.v = $1.v; 
            $$.t = Tipo( "float" ); }
@@ -363,8 +377,7 @@ map<string,int> label;
 
 int yyparse();
 
-void yyerror( const char* st )
-{
+void yyerror( const char* st ) {
   puts( st );
   printf( "Linha: %d\nPerto de: '%s'\n", nlinha, yytext );
 }
@@ -374,7 +387,6 @@ string geraDeclaracaoVarPipe() {
          "  double x_double;\n"
          "  float x_float;\n";
 }
-
 string geraDeclaracaoTemporarias() {
   string c;
   
@@ -398,7 +410,6 @@ string geraDeclaracaoTemporarias() {
     
   return c;  
 }
-
 string geraTemp( Tipo tipo ) {
   return "temp_" + tipo.nome + "_" + toStr( ++n_var_temp[tipo.nome] );
 }
@@ -409,7 +420,6 @@ void insereVariavelTS( TS& ts, string nomeVar, Tipo tipo ) {
   else  
     erro( "Variavel já definida: " + nomeVar );
 }
-
 bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
   if( ts.find( nomeVar ) != ts.end() ) {
     *tipo = ts[ nomeVar ];
@@ -432,7 +442,6 @@ void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
             tipo.t.nome + " " + id.v + ";\n";
   }
 }
-
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
   *SS = Atributo();
   SS->c = "\nint main() {\n" +
@@ -444,7 +453,6 @@ void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
            "  return 0;\n" 
            "}\n";
 }  
-
 void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, 
                                          const Atributo& rvalue ) {
   if( buscaVariavelTS( ts, lvalue.v, &lvalue.t ) ) {
@@ -467,7 +475,6 @@ void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue,
     else
       erro( "Variavel nao declarada: " + lvalue.v );
 }      
-
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 ) {
   SS->t = tipoResultado( S1.t, S2.v, S3.t );
   SS->v = geraTemp( SS->t );
@@ -487,25 +494,139 @@ void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo
 }
 
 Tipo tipoResultado( Tipo a, string operador, Tipo b ) {
-  if( resultadoOperador.find( a.nome + operador + b.nome ) == resultadoOperador.end() )
-    erro( "Operacao nao permitida: " + a.nome + operador + b.nome );
+  if (resultadoOperador.find( a.nome + operador + b.nome ) == resultadoOperador.end())
+      if (resultadoOperador.find( b.nome + operador + a.nome ) == resultadoOperador.end())
+	  erro( "Operacao nao permitida: " + a.nome + operador + b.nome );
 
   return resultadoOperador[a.nome + operador + b.nome];
 }
-
 void inicializaResultadoOperador() {
+  //Operações envolvendo string e string
   resultadoOperador["string+string"] = Tipo( "string" );
+  resultadoOperador["string==string"] = Tipo( "bool" );
+  resultadoOperador["string!=string"] = Tipo( "bool" );
+  
+  //Operações envolvendo char e char
+  resultadoOperador["char+char"] = Tipo( "string" );
+  resultadoOperador["char==char"] = Tipo( "bool" );
+  resultadoOperador["char!=char"] = Tipo( "bool" );
+  
+  //Operações envolvendo int e int
   resultadoOperador["int+int"] = Tipo( "int" );
   resultadoOperador["int-int"] = Tipo( "int" );
   resultadoOperador["int*int"] = Tipo( "int" );
-  resultadoOperador["int==int"] = Tipo( "bool" );
-  resultadoOperador["int%int"] = Tipo( "int" );
   resultadoOperador["int/int"] = Tipo( "int" );
   resultadoOperador["int<int"] = Tipo( "bool" );
   resultadoOperador["int>int"] = Tipo( "bool" );
-  resultadoOperador["double+int"] = Tipo( "double" );
+  resultadoOperador["int!=int"] = Tipo( "bool" );
+  resultadoOperador["int==int"] = Tipo( "bool" );
+  resultadoOperador["int<=int"] = Tipo( "bool" );
+  resultadoOperador["int=>int"] = Tipo( "bool" );
+  resultadoOperador["int&&int"] = Tipo( "bool" );
+  resultadoOperador["int||int"] = Tipo( "bool" );
+  resultadoOperador["int%int"] = Tipo( "int" );
+  
+  //Operações envolvendo int e float
+  resultadoOperador["int+float"] = Tipo( "float" );
+  resultadoOperador["int-float"] = Tipo( "float" );
+  resultadoOperador["int*float"] = Tipo( "float" );
+  resultadoOperador["int/float"] = Tipo( "float" );
+  resultadoOperador["int<float"] = Tipo( "bool" );
+  resultadoOperador["int>float"] = Tipo( "bool" );
+  resultadoOperador["int!=float"] = Tipo( "bool" );
+  resultadoOperador["int==float"] = Tipo( "bool" );
+  resultadoOperador["int<=float"] = Tipo( "bool" );
+  resultadoOperador["int=>float"] = Tipo( "bool" );
+  resultadoOperador["int&&float"] = Tipo( "bool" );
+  resultadoOperador["int||float"] = Tipo( "bool" );
+  
+  //Operações envolvendo float e float
+  resultadoOperador["float+float"] = Tipo( "float" );
+  resultadoOperador["float-float"] = Tipo( "float" );
+  resultadoOperador["float*float"] = Tipo( "float" );
+  resultadoOperador["float/float"] = Tipo( "float" );
+  resultadoOperador["float<float"] = Tipo( "bool" );
+  resultadoOperador["float>float"] = Tipo( "bool" );
+  resultadoOperador["float!=float"] = Tipo( "bool" );
+  resultadoOperador["float==float"] = Tipo( "bool" );
+  resultadoOperador["float<=float"] = Tipo( "bool" );
+  resultadoOperador["float=>float"] = Tipo( "bool" );
+  resultadoOperador["float&&float"] = Tipo( "bool" );
+  resultadoOperador["float||float"] = Tipo( "bool" );
+  
+  //Operações envolvendo int e double
+  resultadoOperador["int+double"] = Tipo( "double" );
+  resultadoOperador["int-double"] = Tipo( "double" );
   resultadoOperador["int*double"] = Tipo( "double" );
-  // TODO: completar essa lista... :(
+  resultadoOperador["int/double"] = Tipo( "double" );
+  resultadoOperador["int<double"] = Tipo( "bool" );
+  resultadoOperador["int>double"] = Tipo( "bool" );
+  resultadoOperador["int!=double"] = Tipo( "bool" );
+  resultadoOperador["int==double"] = Tipo( "bool" );
+  resultadoOperador["int<=double"] = Tipo( "bool" );
+  resultadoOperador["int=>double"] = Tipo( "bool" );
+  resultadoOperador["int&&double"] = Tipo( "bool" );
+  resultadoOperador["int||double"] = Tipo( "bool" );
+  
+  //Operações envolvendo float e double
+  resultadoOperador["float+double"] = Tipo( "double" );
+  resultadoOperador["float-double"] = Tipo( "double" );
+  resultadoOperador["float*double"] = Tipo( "double" );
+  resultadoOperador["float/double"] = Tipo( "double" );
+  resultadoOperador["float<double"] = Tipo( "bool" );
+  resultadoOperador["float>double"] = Tipo( "bool" );
+  resultadoOperador["float!=double"] = Tipo( "bool" );
+  resultadoOperador["float==double"] = Tipo( "bool" );
+  resultadoOperador["float<=double"] = Tipo( "bool" );
+  resultadoOperador["float=>double"] = Tipo( "bool" );
+  resultadoOperador["float&&double"] = Tipo( "bool" );
+  resultadoOperador["float||double"] = Tipo( "bool" );
+  
+  //Operações envolvendo double e double
+  resultadoOperador["double+double"] = Tipo( "double" );
+  resultadoOperador["double-double"] = Tipo( "double" );
+  resultadoOperador["double*double"] = Tipo( "double" );
+  resultadoOperador["double/double"] = Tipo( "double" );
+  resultadoOperador["double<double"] = Tipo( "bool" );
+  resultadoOperador["double>double"] = Tipo( "bool" );
+  resultadoOperador["double!=double"] = Tipo( "bool" );
+  resultadoOperador["double==double"] = Tipo( "bool" );
+  resultadoOperador["double<=double"] = Tipo( "bool" );
+  resultadoOperador["double=>double"] = Tipo( "bool" );
+  resultadoOperador["double&&double"] = Tipo( "bool" );
+  resultadoOperador["double||double"] = Tipo( "bool" );
+  
+  //Operações envolvendo bool e bool
+  resultadoOperador["bool<bool"] = Tipo( "bool" );
+  resultadoOperador["bool>bool"] = Tipo( "bool" );
+  resultadoOperador["bool!=bool"] = Tipo( "bool" );
+  resultadoOperador["bool==bool"] = Tipo( "bool" );
+  resultadoOperador["bool&&bool"] = Tipo( "bool" );
+  resultadoOperador["bool||bool"] = Tipo( "bool" );
+  
+  //Operações envolvendo bool e int
+  resultadoOperador["bool<int"] = Tipo( "bool" );
+  resultadoOperador["bool>int"] = Tipo( "bool" );
+  resultadoOperador["bool!=int"] = Tipo( "bool" );
+  resultadoOperador["bool==int"] = Tipo( "bool" );
+  resultadoOperador["bool&&int"] = Tipo( "bool" );
+  resultadoOperador["bool||int"] = Tipo( "bool" );
+  
+  //Operações envolvendo bool e float
+  resultadoOperador["bool<float"] = Tipo( "bool" );
+  resultadoOperador["bool>float"] = Tipo( "bool" );
+  resultadoOperador["bool!=float"] = Tipo( "bool" );
+  resultadoOperador["bool==float"] = Tipo( "bool" );
+  resultadoOperador["bool&&float"] = Tipo( "bool" );
+  resultadoOperador["bool||float"] = Tipo( "bool" );
+  
+  //Operações envolvendo bool e double
+  resultadoOperador["bool<double"] = Tipo( "bool" );
+  resultadoOperador["bool>double"] = Tipo( "bool" );
+  resultadoOperador["bool!=double"] = Tipo( "bool" );
+  resultadoOperador["bool==double"] = Tipo( "bool" );
+  resultadoOperador["bool&&double"] = Tipo( "bool" );
+  resultadoOperador["bool||double"] = Tipo( "bool" );
 }
 
 string toStr( int n ) {

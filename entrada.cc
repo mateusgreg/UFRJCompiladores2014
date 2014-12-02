@@ -1,8 +1,8 @@
 int main() {
   int a;
-  int b;
-  int c;
+  double b;
+  double c;
   a = 2;
-  b = 1;
-  c = a + 1;
+  b = 1.4555;
+  c = a + b;
 }

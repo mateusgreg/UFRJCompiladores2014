@@ -50,7 +50,7 @@ ID_INC  (("<")({LETRA})*(".h")?(">")|(\")({LETRA})*(".h")?(\"))
 "char"     { yylval = Atributo( "", yytext ); return TK_CHAR; }
 "float"    { yylval = Atributo( "", yytext ); return TK_FLOAT; }
 "double"   { yylval = Atributo( "", yytext ); return TK_DOUBLE; }
-"boolean"  { yylval = Atributo( "", yytext ); return TK_BOOLEAN; }
+"bool"     { yylval = Atributo( "", yytext ); return TK_BOOLEAN; }
 "string"   { yylval = Atributo( "", yytext ); return TK_STRING; }
 "void"     { yylval = Atributo( "", yytext ); return TK_VOID; }
 
