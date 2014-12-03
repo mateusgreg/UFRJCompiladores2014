@@ -157,12 +157,6 @@ ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO
           | TIPO TK_ID ARRAY 
           ;
 
-VARIAVEIS : VARIAVEIS VARIAVEL ';' 
-            { $$ = Atributo(); 
-              $$.c = $1.c + "  " + $2.c;}
-          | { $$ = Atributo(); }
-          ;
-
 TIPO : TK_INT
      | TK_CHAR
      | TK_BOOLEAN
@@ -170,6 +164,12 @@ TIPO : TK_INT
      | TK_DOUBLE
      | TK_STRING
      ;
+
+VARIAVEIS : VARIAVEIS VARIAVEL ';' 
+            { $$ = Atributo(); 
+              $$.c = $1.c + "  " + $2.c;}
+          | { $$ = Atributo(); }
+          ;
 
 VARIAVEL : VARIAVEL ',' TK_ID ARRAY
            { insereVariavelTS( ts, $3.v, $1.t ); 
@@ -497,8 +497,8 @@ Tipo tipoResultado( Tipo a, string operador, Tipo b ) {
   if (resultadoOperador.find( a.nome + operador + b.nome ) == resultadoOperador.end())
       if (resultadoOperador.find( b.nome + operador + a.nome ) == resultadoOperador.end())
 	  erro( "Operacao nao permitida: " + a.nome + operador + b.nome );
-
-  return resultadoOperador[a.nome + operador + b.nome];
+      else return resultadoOperador[b.nome + operador + a.nome];
+  else return resultadoOperador[a.nome + operador + b.nome];
 }
 void inicializaResultadoOperador() {
   //Operações envolvendo string e string

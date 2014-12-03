@@ -4,5 +4,5 @@ int main() {
   double c;
   a = 2;
   b = 1.4555;
-  c = a + b;
+  c = b/3 * a;
 }
