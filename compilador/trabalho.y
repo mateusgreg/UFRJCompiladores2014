@@ -51,9 +51,11 @@ void insereVariavelTS( TS&, string nomeVar, Tipo tipo );
 bool buscaVariavelTS( TS&, string nomeVar, Tipo* tipo );
 void erro( string msg );
 string toStr( int n );
+string toUpperString(string input);
 
 void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue );
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
+void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds );
 void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, 
                                         const Atributo& cmdsThen,
@@ -122,7 +124,7 @@ MAIN_BLOCO : '{' VARIAVEIS COMANDOS '}'
                $$.c = "{\n" + geraDeclaracaoVarPipe() + "\n" + 
 			      geraDeclaracaoTemporarias() + "\n" +
 			      $2.c + $3.c + 
-                      "  return 0;\n}"; }
+                      "\n  return 0;\n}"; }
            ; 
      
 CORPO_DE_FUNCAO : BLOCO 
@@ -188,7 +190,7 @@ ARRAY : '[' CONST_INT ']' ARRAY
 
 COMANDOS : COMANDO COMANDOS
            { $$ = Atributo();
-             $$.c = $1.c + $2.c;}
+             $$.c = $1.c + '\n' + $2.c;}
          | { $$ = Atributo(); }
          ;
 
@@ -319,7 +321,9 @@ OPERACAO : OPERACAO '+' OPERACAO
          | OPERACAO TK_DIFERENTE OPERACAO
            { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | '!' OPERACAO
+           { geraCodigoOperadorUnario(&$$, $1, $2); }
          | '(' OPERACAO ')'
+           { $$ = $2; }
          | TK_ID '[' INDICE ']'
          | TK_ID '(' PARAMETROS ')'
          | TK_ID '(' ')'
@@ -338,7 +342,8 @@ VALOR : CONST_INT
         {  $$.v = $1.v; 
            $$.t = Tipo( "char" ); }
       | CONST_BOOLEAN
-        {  $$.v = $1.v; 
+        {  if (toUpperString($1.v) == "TRUE") $$.v = "1"; 
+	   else $$.v = "0"; 
            $$.t = Tipo( "bool" ); }
       | CONST_FLOAT
         {  $$.v = $1.v; 
@@ -366,10 +371,14 @@ INDICE : CONST_INT
        | TK_ID
        ;
        
-CMD_PRINTF : TK_PRINTF '(' CONST_STRING ',' VALOR ')'
+CMD_PRINTF : TK_PRINTF '(' CONST_STRING ',' OPERACAO ')'
+	     { $$.c = $3.c + $5.c + "  printf( " + $3.v + ", " + $5.v + " )"; }
            ;
            
 CMD_SCANF : TK_SCANF '(' CONST_STRING ',' '&' TK_ID ')'
+	     { if ($6.t.nome == "string")
+	            $$.c = $3.c + $6.c + "  scanf( " + $3.v + ", "  + $6.v + " )";
+	       else $$.c = $3.c + $6.c + "  scanf( " + $3.v + ", &" + $6.v + " )";}
           ;
 %%
 int nlinha = 1;
@@ -444,18 +453,15 @@ bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
     return false;
 }
 
-void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
-                                           const Atributo& id ) {
+void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {
   SS->v = "";
   SS->t = tipo.t;
-  if( tipo.t.nome == "string" ) {
-    SS->c = tipo.c + 
-           "char " + id.v + "["+ toStr( MAX_STR ) +"];\n";   
-  }
-  else {
-    SS->c = tipo.c + 
-            tipo.t.nome + " " + id.v + ";\n";
-  }
+  if( tipo.t.nome == "bool")
+    SS->c = tipo.c + "int " + id.v + ";\n";
+  else if( tipo.t.nome == "string" ) 
+    SS->c = tipo.c + "char " + id.v + "["+ toStr( MAX_STR ) +"];\n";   
+  else 
+    SS->c = tipo.c + tipo.t.nome + " " + id.v + ";\n";
 }
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
   *SS = Atributo();
@@ -498,6 +504,16 @@ void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo
   else
     SS->c = S1.c + S3.c + 
             "  " + SS->v + " = " + S1.v + " " + S2.v + " " + S3.v + ";\n";
+}
+void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value ) {
+  SS->t = Tipo("bool");
+  SS->v = geraTemp( SS->t );
+
+  if( value.t.nome == "int" || value.t.nome == "bool") {
+    SS->c = value.c + 
+            "\n  " + SS->v + " = !" + value.v + ";\n\n";
+  }
+  else erro( "Operacao nao permitida: " + oper.v + value.v);
 }
 
 Tipo tipoResultado( Tipo a, string operador, Tipo b ) {
@@ -640,6 +656,12 @@ string toStr( int n ) {
   char buf[1024] = ""; 
   sprintf( buf, "%d", n );
   return buf;
+}
+string toUpperString(string input) {
+  int k;
+  for (k = 0; k<input.length(); k++)
+    input[k] = toupper(input[k]);
+  return input;
 }
 
 void erro( string msg ) {

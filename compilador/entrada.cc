@@ -1,9 +1,6 @@
 int main() {
-  char letra;
-  string nome;
-  string a;
+  bool y1;
+  int y2;
   
-  nome = "WWW";
-  letra = 'x';
-  a = letra;
+  y1 = TrUe;
 }

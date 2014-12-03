@@ -1,18 +1,18 @@
 Requisitos Funcionais:
 
 Para obter 5 pontos:
-* 1) Tipos: int, char, boolean, float, double, string
-2) Estruturas de controle: if/else, for, while, do-while, switch.
-3) Array bi-dimensional
-4) blocos
-5) Variáveis locais e globais, com escopo.
-6) Expressões com precedência e associatividade de operadores
-7) funções com parametros por valor e referência
-8) concatenação de strings com operador "+"
-9) entrada e saida padrao (printf e scanf)
-9) verificação de tipos
-10) verificação do número e tipo dos parâmetros de funções
-11) Operadores básicos: ( ) + - / * % && || ! > < >=
+X 1) Tipos: int, char, boolean, float, double, string
+  2) Estruturas de controle: if/else, for, while, do-while, switch.
+  3) Array bi-dimensional
+  4) blocos
+  5) Variáveis locais e globais, com escopo.
+X 6) Expressões com precedência e associatividade de operadores
+  7) funções com parametros por valor e referência
+X 8) concatenação de strings com operador "+"
+? 9) entrada e saida padrao (X printf e ? scanf)
+X 9) verificação de tipos
+  10) verificação do número e tipo dos parâmetros de funções
+  11) Operadores básicos: ( ) + - / * % && || ! > < >=
 
 Acima de 5 pontos:
 Pipes:
