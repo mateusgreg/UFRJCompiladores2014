@@ -7,17 +7,17 @@ int main(){
   double x_double;
   float x_float;
 
-  double temp_double_1;
-  double temp_double_2;
+  int temp_bool_1;
 
-  int a;
-  double b;
-  double c;
-  a = 2;
-  b = 1.4555;
-  temp_double_1 = b / 3;
-  temp_double_2 = temp_double_1 * a;
-  c = temp_double_2;
+  int y;
+  y = 1;
+
+  printf( "Só que não\n" );
+
+  temp_bool_1 = !y;
+
+  printf( "O valor é %d\n", temp_bool_1 );
+
   return 0;
 }
 
