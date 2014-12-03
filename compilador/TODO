@@ -26,4 +26,3 @@ Até 9 pontos:
 
 Para ter 10:
 18) split[ x > 6 ]( a, b )
-19) merge( a, b )[ x == y ]
