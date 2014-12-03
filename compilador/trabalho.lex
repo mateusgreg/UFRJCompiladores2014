@@ -16,9 +16,9 @@ DEFAULT [Dd][Ee][Ff][Aa][Uu][Ll][Tt]
 INT     {NUMERO}+
 DOUBLE  {NUMERO}+("."{NUMERO}+)?
 FLOAT   {DOUBLE}[Ff]
-CHAR    ['][^\n'][']
+CHAR    \'[^'\n]\'
 BOOLEAN ([Tt][Rr][Uu][Ee])|([Ff][Aa][Ll][Ss][Ee])
-STR     (\"([^"]|\\\")*\")
+STR     \"[^"\n]*\"
 
 ID      ({LETRA}({LETRA}|{NUMERO})*)
 ID_INC  (("<")({LETRA})*(".h")?(">")|(\")({LETRA})*(".h")?(\"))

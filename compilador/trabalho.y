@@ -335,6 +335,8 @@ VALOR : CONST_INT
         {  $$.v = $1.v; 
            $$.t = Tipo( "int" ); }
       | CONST_CHAR
+        {  $$.v = $1.v; 
+           $$.t = Tipo( "char" ); }
       | CONST_BOOLEAN
         {  $$.v = $1.v; 
            $$.t = Tipo( "bool" ); }
@@ -345,6 +347,8 @@ VALOR : CONST_INT
         {  $$.v = $1.v; 
            $$.t = Tipo( "double" ); }
       | CONST_STRING
+        {  $$.v = $1.v; 
+           $$.t = Tipo( "string" ); }
       | TK_ID
         { if( buscaVariavelTS( ts, $1.v, &$$.t ) ) 
              $$.v = $1.v; 
@@ -414,6 +418,17 @@ string geraTemp( Tipo tipo ) {
   return "temp_" + tipo.nome + "_" + toStr( ++n_var_temp[tipo.nome] );
 }
 
+bool isTypeCompatibleWith(string lvalue, string rvalue){
+  if (lvalue == rvalue) return true;
+  
+  if ((lvalue == "int" || lvalue == "float" || lvalue == "double") && 
+      (rvalue == "int" || rvalue == "float" || rvalue == "double")) return true;
+  
+  if (lvalue == "string" && rvalue == "char") return true;
+  
+  return false;
+}
+
 void insereVariavelTS( TS& ts, string nomeVar, Tipo tipo ) {
   if( !buscaVariavelTS( ts, nomeVar, &tipo ) )
     ts[nomeVar] = tipo;
@@ -453,28 +468,21 @@ void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
            "  return 0;\n" 
            "}\n";
 }  
-void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, 
-                                         const Atributo& rvalue ) {
-  if( buscaVariavelTS( ts, lvalue.v, &lvalue.t ) ) {
-    if( lvalue.t.nome == rvalue.t.nome ) {
-      if( lvalue.t.nome == "string" ) {
-        SS->c = lvalue.c + rvalue.c + 
-                "  strncpy( " + lvalue.v + ", " + rvalue.v + ", " + 
-                            toStr( MAX_STR - 1 ) + " );\n" +
-                "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
-      }
-      else
-        SS->c = lvalue.c + rvalue.c + 
-                "  " + lvalue.v + " = " + rvalue.v + ";\n"; 
-    }
-    else
-      erro( "Expressao " + rvalue.t.nome + 
-            " nao pode ser atribuida a variavel " +
-            lvalue.t.nome );
-    } 
-    else
-      erro( "Variavel nao declarada: " + lvalue.v );
-}      
+void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue ) {
+    if( buscaVariavelTS( ts, lvalue.v, &lvalue.t ) ) {
+	if(isTypeCompatibleWith(lvalue.t.nome, rvalue.t.nome)) {
+	    if( lvalue.t.nome == "string" ) {
+		if ( rvalue.t.nome == "string" ){
+		    SS->c = lvalue.c + rvalue.c + "  strncpy( " + lvalue.v + ", " + rvalue.v + ", " + 
+			    toStr( MAX_STR - 1 ) + " );\n" + "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
+		}
+		if ( rvalue.t.nome == "char" ){
+		    SS->c = lvalue.c + rvalue.c + "  " + lvalue.v + " = string(" + rvalue.v + ");\n";
+		}
+	    } else SS->c = lvalue.c + rvalue.c + "  " + lvalue.v + " = " + rvalue.v + ";\n"; 
+	} else erro( "Expressao " + rvalue.t.nome + " nao pode ser atribuida a variavel " + lvalue.t.nome );
+    } else erro( "Variavel nao declarada: " + lvalue.v );
+} 
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 ) {
   SS->t = tipoResultado( S1.t, S2.v, S3.t );
   SS->v = geraTemp( SS->t );
@@ -482,11 +490,9 @@ void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo
   if( SS->t.nome == "string" ) {
     // Falta o operador de comparação para string
     SS->c = S1.c + S3.c + 
-            "\n  strncpy( " + SS->v + ", " + S1.v + ", " + 
-                        toStr( MAX_STR - 1 ) + " );\n" +
-            "  strncat( " + SS->v + ", " + S3.v + ", " + 
-                        toStr( MAX_STR - 1 ) + " );\n" +
-            "  " + SS->v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n\n";    
+            "\n  strncpy( " + SS->v + ", " + S1.v + ", " + toStr( MAX_STR - 1 ) + " );\n" +
+              "  strncat( " + SS->v + ", " + S3.v + ", " + toStr( MAX_STR - 1 ) + " );\n" +
+                       "  " + SS->v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n\n";
   }
   else
     SS->c = S1.c + S3.c + 
