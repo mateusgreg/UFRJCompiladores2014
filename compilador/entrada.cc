@@ -1,6 +1,8 @@
 int main() {
-  bool y1;
-  int y2;
+  int y;
   
-  y1 = TrUe;
+  y=1;
+  printf("Só que não\n");
+  printf("O valor é %d\n",!y);
+  
 }

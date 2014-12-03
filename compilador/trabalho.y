@@ -139,10 +139,12 @@ BLOCO : '{' VARIAVEIS COMANDOS '}'
           $$.c = "{" + $2.c + $3.c + "}"; }
       ; 
 
-BLOCO_COMANDO : BLOCO
-		{ $$ = $1; }
-              | COMANDO ';'
-                { $$ = $1; }
+BLOCO_COMANDO : '{' VARIAVEIS COMANDOS '}'
+		{ $$ = Atributo();
+		  $$.c = $2.c + $3.c; }
+              | COMANDO     //LOCALIZAÇÃO DO SHIFT/REDUCE; PONHA UM ';' QUE ELE SAI
+                { $$ = $1;
+                  $$.c += '\n'; }
               ; 
 
 ARGUMENTOS : ARGUMENTO
@@ -225,10 +227,12 @@ COMANDO_BLOCO : CMD_IF_ELSE
               ;
 
 CMD_IF_ELSE : TK_IF '(' OPERACAO ')' BLOCO_COMANDO CMD_ELSE
+	      { geraCodigoIfComElse( &$$, $3, $5, $6 ); }
             ;
 
 CMD_ELSE : TK_ELSE BLOCO_COMANDO
-         |
+           { $$ = $2; }
+         | { $$ = Atributo(); }
          ;
 
 CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OPERACAO ';' CMD_ATRIB ')' BLOCO_COMANDO
@@ -324,14 +328,6 @@ OPERACAO : OPERACAO '+' OPERACAO
            { geraCodigoOperadorUnario(&$$, $1, $2); }
          | '(' OPERACAO ')'
            { $$ = $2; }
-         | TK_ID '[' INDICE ']'
-         | TK_ID '(' PARAMETROS ')'
-         | TK_ID '(' ')'
-         | FUN_SORT
-         | FUN_FIRST_N
-         | FUN_LAST_N
-         | FUN_SPLIT
-         | FUN_MERGE
          | VALOR
          ;
 
@@ -360,6 +356,14 @@ VALOR : CONST_INT
           else
              erro( "Variavel nao declarada: " + $1.v );
         }
+      | TK_ID '[' INDICE ']'
+      | TK_ID '(' PARAMETROS ')'
+      | TK_ID '(' ')'
+      | FUN_SORT
+      | FUN_FIRST_N
+      | FUN_LAST_N
+      | FUN_SPLIT
+      | FUN_MERGE
       ;
 
 PARAMETROS : VALOR ',' PARAMETROS
@@ -371,7 +375,9 @@ INDICE : CONST_INT
        | TK_ID
        ;
        
-CMD_PRINTF : TK_PRINTF '(' CONST_STRING ',' OPERACAO ')'
+CMD_PRINTF : TK_PRINTF '(' CONST_STRING ')'
+	     { $$.c = $3.c + "  printf( " + $3.v + " )"; }    //O GABARITO NÃO POSSUI PRINTF SEM UMA VARIAVEL
+           | TK_PRINTF '(' CONST_STRING ',' OPERACAO ')'
 	     { $$.c = $3.c + $5.c + "  printf( " + $3.v + ", " + $5.v + " )"; }
            ;
            
@@ -393,6 +399,10 @@ int yyparse();
 void yyerror( const char* st ) {
   puts( st );
   printf( "Linha: %d\nPerto de: '%s'\n", nlinha, yytext );
+}
+
+string geraLabel( string cmd ) {
+  return "L_" + cmd +"_" + toStr( ++label[cmd] );
 }
 
 string geraDeclaracaoVarPipe() {
@@ -451,6 +461,21 @@ bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
   }
   else
     return false;
+}
+
+void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen, const Atributo& cmdsElse ) {
+  string ifTrue = geraLabel( "if_true" ),
+         ifFalse = geraLabel( "if_false" ),
+         ifFim = geraLabel( "if_fim" );
+      
+  *SS = Atributo();
+  SS->c = expr.c + 
+          "  if( " + expr.v + " ) goto " + ifTrue + ";\n" +
+          "  goto " + ifFalse + ";\n" +
+          "  " + ifTrue + ":\n" + cmdsThen.c +
+          "  goto " + ifFim + ";\n" +
+          "  " + ifFalse + ":\n" + cmdsElse.c +
+          "  " + ifFim + ":\n";
 }
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {
