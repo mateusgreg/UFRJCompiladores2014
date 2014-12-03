@@ -477,7 +477,8 @@ void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalu
 			    toStr( MAX_STR - 1 ) + " );\n" + "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
 		}
 		if ( rvalue.t.nome == "char" ){
-		    SS->c = lvalue.c + rvalue.c + "  " + lvalue.v + " = string(" + rvalue.v + ");\n";
+		    SS->c = lvalue.c + rvalue.c + "  " + lvalue.v + "[0] = " + rvalue.v + ";\n"
+		                                  "  " + lvalue.v + "[1] = 0;\n";
 		}
 	    } else SS->c = lvalue.c + rvalue.c + "  " + lvalue.v + " = " + rvalue.v + ";\n"; 
 	} else erro( "Expressao " + rvalue.t.nome + " nao pode ser atribuida a variavel " + lvalue.t.nome );

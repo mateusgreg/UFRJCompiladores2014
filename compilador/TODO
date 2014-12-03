@@ -1,7 +1,7 @@
 Requisitos Funcionais:
 
 Para obter 5 pontos:
-1) Tipos: int, char, boolean, float, double, string
+* 1) Tipos: int, char, boolean, float, double, string
 2) Estruturas de controle: if/else, for, while, do-while, switch.
 3) Array bi-dimensional
 4) blocos
