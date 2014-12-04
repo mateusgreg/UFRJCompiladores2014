@@ -15,10 +15,16 @@ const int MAX_STR = 256;
 
 struct Tipo {
   string nome;
+  int nDim;
+  int d1;
+  int d2;
   
-  Tipo() {}
+  Tipo() { nome = ""; nDim = 0; d1 = 0; d2 = 0; }
   Tipo( string nome ) {
     this->nome = nome;
+    nDim = 0; 
+    d1 = 0; 
+    d2 = 0;
   }
 };
 
@@ -30,7 +36,7 @@ struct Atributo {
   Atributo() {}  // inicializacao automatica para vazio ""
   Atributo( string v, string t = "", string c = "" ) {
     this->v = v;
-    this->t.nome = t;
+    this->t = Tipo(t);
     this->c = c;
   }
 };
@@ -50,6 +56,7 @@ string geraDeclaracaoVarPipe();
 void insereVariavelTS( TS&, string nomeVar, Tipo tipo );
 bool buscaVariavelTS( TS&, string nomeVar, Tipo* tipo );
 void erro( string msg );
+int toInt( string n );
 string toStr( int n );
 string toUpperString(string input);
 
@@ -179,14 +186,22 @@ VARIAVEL : VARIAVEL ',' TK_ID ARRAY
            { insereVariavelTS( ts, $3.v, $1.t ); 
              geraDeclaracaoVariavel( &$$, $1, $3 );}
          | TIPO TK_ID ARRAY
-           { insereVariavelTS( ts, $2.v, $1.t ); 
+           { $1.t.nDim = $3.t.nDim;
+             $1.t.d1   = $3.t.d1;
+             $1.t.d2   = $3.t.d2;
+             insereVariavelTS( ts, $2.v, $1.t ); 
              geraDeclaracaoVariavel( &$$, $1, $2 );}
          ;
 
-ARRAY : '[' CONST_INT ']' ARRAY
-      | '[' ']'
+ARRAY : '[' CONST_INT ']' '[' CONST_INT ']'
         { $$ = Atributo();
-          $$.c = "[]";}
+          $$.t.nDim = 2;
+          $$.t.d1 = toInt( $2.v );
+          $$.t.d2 = toInt( $5.v );}
+      | '[' CONST_INT ']'
+        { $$ = Atributo();
+          $$.t.nDim = 1;
+          $$.t.d1 = toInt( $2.v ); }
       | { $$ = Atributo(); }
       ;
 
@@ -477,16 +492,46 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cm
           "  " + ifFalse + ":\n" + cmdsElse.c +
           "  " + ifFim + ":\n";
 }
+void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
+                                  const Atributo& condicao, 
+                                  const Atributo& passo, 
+                                  const Atributo& cmds ) {
+  string forCond = geraLabel( "for_cond" ),
+         forFim = geraLabel( "for_fim" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+         
+  *SS = Atributo();
+  if( condicao.t.nome != "bool" )
+    erro( "A expressão de teste deve ser booleana: " + condicao.t.nome ); 
+  
+  // Funciona apenas para filtro, sem pipe que precisa de buffer 
+  // (sort, por exemplo, não funciona)
+  SS->c = inicial.c + forCond + ":\n" + condicao.c +
+          "  " + valorNotCond + " = !" + condicao.v + ";\n" +
+          "  if( " + valorNotCond + " ) goto " + forFim + ";\n" +
+          cmds.c +
+          passo.c +
+          "  goto " + forCond + ";\n" + 
+          forFim + ":\n";
+}
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {
   SS->v = "";
   SS->t = tipo.t;
-  if( tipo.t.nome == "bool")
-    SS->c = tipo.c + "int " + id.v + ";\n";
-  else if( tipo.t.nome == "string" ) 
-    SS->c = tipo.c + "char " + id.v + "["+ toStr( MAX_STR ) +"];\n";   
-  else 
-    SS->c = tipo.c + tipo.t.nome + " " + id.v + ";\n";
+  
+  string tipoNome = tipo.t.nome;
+  if( tipoNome == "bool") tipoNome = "int";
+  if( tipoNome == "string") tipoNome = "char";
+  
+  switch( tipo.t.nDim ) {
+    case 0: SS->c = tipo.c + tipoNome + " " + id.v;  break;
+    case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( tipo.t.d1 ) + "]";
+    case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( tipo.t.d1 ) + "]" + "[" + toStr( tipo.t.d2 ) + "]";
+  }
+  
+  if( tipo.t.nome == "string" ) 
+       SS->c = SS->c + "["+ toStr( MAX_STR ) +"];\n";
+  else SS->c = SS->c + ";\n";
 }
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
   *SS = Atributo();
@@ -677,6 +722,12 @@ void inicializaResultadoOperador() {
   resultadoOperador["bool||double"] = Tipo( "bool" );
 }
 
+int toInt( string n ) {
+  int aux = 0;
+  sscanf( n.c_str(), "%d", &aux );
+  
+  return aux;
+}
 string toStr( int n ) {
   char buf[1024] = ""; 
   sprintf( buf, "%d", n );
