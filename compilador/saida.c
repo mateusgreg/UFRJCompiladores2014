@@ -12,7 +12,7 @@ int main(){
   int y;
   y = 1;
 
-  printf( "Só que não\n" );
+  printf( "%s", "Só que não\n" );
 
   temp_bool_1 = !y;
 

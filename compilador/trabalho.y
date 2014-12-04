@@ -376,7 +376,7 @@ INDICE : CONST_INT
        ;
        
 CMD_PRINTF : TK_PRINTF '(' CONST_STRING ')'
-	     { $$.c = $3.c + "  printf( " + $3.v + " )"; }    //O GABARITO NÃO POSSUI PRINTF SEM UMA VARIAVEL
+	     { $$.c = $3.c + "  printf( \"%s\", " + $3.v + " )"; }
            | TK_PRINTF '(' CONST_STRING ',' OPERACAO ')'
 	     { $$.c = $3.c + $5.c + "  printf( " + $3.v + ", " + $5.v + " )"; }
            ;
