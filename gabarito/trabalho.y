@@ -155,7 +155,6 @@ INDICE : TK_CINT
        ;
        
 CMD_PRINTF : TK_PRINTF '(' TK_STR ',' F ')'
-	   | TK_PRINTF '(' TK_STR ')'
            ;
            
 CMD_SCANF : TK_SCANF '(' TK_STR ',' '&' TK_ID ')'
