@@ -60,7 +60,8 @@ int toInt( string n );
 string toStr( int n );
 string toUpperString(string input);
 
-void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, int nDim, int indice1, int indice2);
+void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, int indice1, int indice2);
+string geraVariavelDeCodigoAtribuicao(const Atributo& lvalue, int indice1, int indice2);
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
 void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds );
@@ -186,10 +187,16 @@ VARIAVEL : VARIAVEL ',' TK_ID ARRAY
            { insereVariavelTS( ts, $3.v, $1.t ); 
              geraDeclaracaoVariavel( &$$, $1, $3 ); }
          | TIPO TK_ID ARRAY
-           { $2.t.nDim = $3.t.nDim;
+       
+           { $1.t.nDim = $3.t.nDim;
+             $1.t.d1   = $3.t.d1;
+             $1.t.d2   = $3.t.d2;
+             
+             $2.t.nDim = $3.t.nDim;
              $2.t.d1   = $3.t.d1;
              $2.t.d2   = $3.t.d2;
-             insereVariavelTS( ts, $2.v, $1.t ); 
+             
+             insereVariavelTS( ts, $2.v, $1.t );
              geraDeclaracaoVariavel( &$$, $1, $2 ); }
          ;
 
@@ -197,12 +204,13 @@ ARRAY : '[' CONST_INT ']' '[' CONST_INT ']'
         { $$ = Atributo();
           $$.t.nDim = 2;
           $$.t.d1 = toInt( $2.v );
-          $$.t.d2 = toInt( $5.v );}
+          $$.t.d2 = toInt( $5.v ); }
       | '[' CONST_INT ']'
         { $$ = Atributo();
           $$.t.nDim = 1;
           $$.t.d1 = toInt( $2.v ); }
-      | { $$ = Atributo(); }
+      |
+	{ $$ = Atributo(); }
       ;
 
 COMANDOS : COMANDO COMANDOS
@@ -299,11 +307,11 @@ FUN_MERGE : TK_MERGE  '(' TK_ID ',' TK_ID ')'
           ;
 
 CMD_ATRIB : TK_ID '=' OPERACAO
-            { geraCodigoAtribuicao( &$$, $1, $3, 0,0,0);}
+            { geraCodigoAtribuicao( &$$, $1, $3, 0, 0); }
           | TK_ID '[' INDICE ']' '=' OPERACAO
-            { geraCodigoAtribuicao( &$$, $1, $6, 1,toInt($3.v),0);}
+            { geraCodigoAtribuicao( &$$, $1, $6, toInt($3.v), 0); }
           | TK_ID '[' INDICE ']' '[' INDICE ']' '=' OPERACAO
-            { geraCodigoAtribuicao( &$$, $1, $9, 2,toInt($3.v),toInt($6.v));}
+            { geraCodigoAtribuicao( &$$, $1, $9, toInt($3.v), toInt($6.v)); }
           | TK_ID TK_ADICIONA_UM
           | TK_ID TK_DIMINUI_UM
           ;
@@ -527,13 +535,13 @@ void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo&
   if( tipoNome == "string") tipoNome = "char";
   
   switch( id.t.nDim ) {
-    case 0: SS->c = tipo.c + tipoNome + " " + id.v;  break;
+    case 0: SS->c = tipo.c + tipoNome + " " + id.v; break;
     case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 ) + "]"; break;
-    case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 ) + "]" + "[" + toStr( id.t.d2 ) + "]";
+    case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 ) + "]";
   }
   
   if( tipo.t.nome == "string" ) 
-       SS->c = SS->c + "["+ toStr( MAX_STR ) +"];\n";
+    SS->c = SS->c + "["+ toStr( MAX_STR ) +"];\n";
   else SS->c = SS->c + ";\n";
 }
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
@@ -547,29 +555,30 @@ void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
            "  return 0;\n" 
            "}\n";
 }  
-void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, int nDim, int indice1, int indice2) {
+void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, int indice1, int indice2) {
     if( buscaVariavelTS( ts, lvalue.v, &lvalue.t ) ) {
 	if(isTypeCompatibleWith(lvalue.t.nome, rvalue.t.nome)) {
 	    if( lvalue.t.nome == "string" ) {
 		if ( rvalue.t.nome == "string" ){
-		    SS->c = lvalue.c + rvalue.c + "  strncpy( " + geraVariavelDeCodigoAtribuicao(lvalue.v,nDim,indice1,indice2) + ", " + rvalue.v + ", " + 
-			    toStr( MAX_STR - 1 ) + " );\n" + "  " + geraVariavelDeCodigoAtribuicao(lvalue.v,nDim,indice1,indice2) + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
+		    SS->c = lvalue.c + rvalue.c + "  strncpy( " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + ", " + rvalue.v + ", " + 
+			    toStr( MAX_STR - 1 ) + " );\n" + "  " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
 		}
 		if ( rvalue.t.nome == "char" ){
-		    SS->c = lvalue.c + rvalue.c + "  " + geraVariavelDeCodigoAtribuicao(lvalue.v,nDim,indice1,indice2) + "[0] = " + rvalue.v + ";\n"
-		                                  "  " + geraVariavelDeCodigoAtribuicao(lvalue.v,nDim,indice1,indice2) + "[1] = 0;\n";
+		    SS->c = lvalue.c + rvalue.c + "  " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + "[0] = " + rvalue.v + ";\n"
+		                                  "  " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + "[1] = 0;\n";
 		}
-	    } else SS->c = lvalue.c + rvalue.c + "  " + geraVariavelDeCodigoAtribuicao(lvalue.v,nDim,indice1,indice2) + " = " + rvalue.v + ";\n"; 
+	    } else SS->c = lvalue.c + rvalue.c + "  " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + " = " + rvalue.v + ";\n"; 
 	} else erro( "Expressao " + rvalue.t.nome + " nao pode ser atribuida a variavel " + lvalue.t.nome );
     } else erro( "Variavel nao declarada: " + lvalue.v );
 } 
-string geraVariavelDeCodigoAtribuicao(string nome, int nDim, int indice1, int indice2){
-  switch (nDim){
-    case 0: return nome;
-    case 1: return nome + '[' + indice1 + ']';
-    default: return nome + '[' + indice1 + ']' + '[' + indice2 + ']';
+string geraVariavelDeCodigoAtribuicao(const Atributo& lvalue, int indice1, int indice2){
+  switch ( lvalue.t.nDim ) {
+    case 0: return lvalue.v;
+    case 1: return lvalue.v + '[' + toStr(indice1) + ']';
+    case 2: return lvalue.v + '[' + toStr(indice1 * lvalue.t.d2 + indice2) + ']';
   }
-  return nome;
+  
+  return lvalue.v;
 }
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 ) {
   SS->t = tipoResultado( S1.t, S2.v, S3.t );

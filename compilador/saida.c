@@ -9,12 +9,13 @@ int main(){
 
   int temp_bool_1;
 
-  int y;
-  y = 1;
+  int b[20];
+  int a;
+  b[5] = 3;
 
   printf( "%s", "Só que não\n" );
 
-  temp_bool_1 = !y;
+  temp_bool_1 = !1;
 
   printf( "O valor é %d\n", temp_bool_1 );
 
