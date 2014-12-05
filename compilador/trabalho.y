@@ -320,6 +320,14 @@ CMD_ATRIB : TK_ID '=' OPERACAO
           | TK_ID '[' INDICE ']' '[' INDICE ']' '=' OPERACAO
             { geraCodigoAtribuicao( &$$, $1, $9, toInt($3.v), toInt($6.v)); }
           | TK_ID TK_ADICIONA_UM
+	    { Atributo operacaoMaisMais = Atributo();
+	      string varTemp = geraTemp( Tipo("int") );
+	      
+	      operacaoMaisMais.t = Tipo( "int" );
+	      operacaoMaisMais.c = "  " + varTemp + " = " + $1.v + " + 1;\n";
+	      operacaoMaisMais.v = varTemp;
+	      
+	      geraCodigoAtribuicao( &$$, $1, operacaoMaisMais, 0, 0); }
           | TK_ID TK_DIMINUI_UM
           ;
 

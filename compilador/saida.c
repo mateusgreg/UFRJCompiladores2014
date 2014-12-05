@@ -9,8 +9,10 @@ int main(){
 
   int temp_bool_1;
   int temp_bool_2;
-  int temp_bool_3;
   int temp_int_1;
+  int temp_int_2;
+  int temp_int_3;
+  int temp_int_4;
   char temp_string_1[256];
   char temp_string_2[256];
 
@@ -51,20 +53,26 @@ int i;
   strncpy( &s2[4864], "de Souza", 255 );
   s2[5119] = 0;
 
-  a = 0;
+  a = 10;
 
+  temp_int_1 = a + 1;
+  a = temp_int_1;
 
-  temp_bool_1 = !a;
+  temp_int_2 = a + 1;
+  a = temp_int_2;
 
-  printf( "\nO valor é %d\n", temp_bool_1 );
+  temp_int_3 = a + 3;
+  a = temp_int_3;
+
+  printf( "\nO valor de 'a' é: %d\n", a );
   i = 0;
 L_for_cond_1:
-  temp_bool_2 = i < 10;
-  temp_bool_3 = !temp_bool_2;
-  if( temp_bool_3 ) goto L_for_fim_1;
+  temp_bool_1 = i < 10;
+  temp_bool_2 = !temp_bool_1;
+  if( temp_bool_2 ) goto L_for_fim_1;
   printf( "%s", "\nEstou no for!!!" );
-  temp_int_1 = i + 1;
-  i = temp_int_1;
+  temp_int_4 = i + 1;
+  i = temp_int_4;
   goto L_for_cond_1;
 L_for_fim_1:
 

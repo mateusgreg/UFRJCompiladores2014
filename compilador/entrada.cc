@@ -21,10 +21,14 @@ int main() {
   
   s2[2][5] = "de Souza";
   
-  a = 0;
-  printf("\nO valor é %d\n", !a);
+  a = 10;
+  a++;
+  a++;
+  a = a+3;
   
-  for ( i=0; i<10; i=i+1) {
+  printf("\nO valor de 'a' é: %d\n", a);
+  
+  for ( i=0; i<10; i++) {
     printf("\nEstou no for!!!");
   }
 }
