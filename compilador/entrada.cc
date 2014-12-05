@@ -1,6 +1,6 @@
 int main() {
   
-  int a, i;
+  int a, i, j;
   int b[2];
   float f[10][2];
   
@@ -29,6 +29,16 @@ int main() {
   printf("\nO valor de 'a' é: %d\n", a);
   
   for ( i=0; i<10; i++) {
-    printf("\nEstou no for!!!");
+    printf("\nEstou no for!!! Iteracao: %d", i);
   }
+  
+  printf("\n");
+  
+  i=0;
+  while ( i<10 ) {
+    printf("\nEstou no while!!! Iteracao: %d", i);
+    i++;
+  }
+  
+  printf("\n");
 }

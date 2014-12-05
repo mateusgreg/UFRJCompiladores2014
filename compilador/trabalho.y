@@ -76,6 +76,10 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial,
                                   const Atributo& condicao, 
                                   const Atributo& passo, 
                                   const Atributo& cmds );
+                                  
+void geraCodigoWhile( Atributo* SS, const Atributo& condicao, 
+                                    const Atributo& cmds );
+                                  
 void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
@@ -269,6 +273,7 @@ CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OPERACAO ';' CMD_ATRIB ')' BLOCO_COMANDO
         ;
 
 CMD_WHILE : TK_WHILE '(' OPERACAO ')' BLOCO_COMANDO 
+	    { geraCodigoWhile( &$$, $3, $5 ); }
           ;
 
 CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OPERACAO ')'
@@ -540,6 +545,24 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial,
           passo.c +
           "  goto " + forCond + ";\n" + 
           forFim + ":\n";
+}
+
+void geraCodigoWhile( Atributo* SS, const Atributo& condicao, 
+                                    const Atributo& cmds ) {
+  string whileCond = geraLabel( "while_cond" ),
+         whileFim = geraLabel( "while_fim" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+         
+  *SS = Atributo();
+  if( condicao.t.nome != "bool" )
+    erro( "A expressão de teste deve ser booleana: " + condicao.t.nome ); 
+  
+  SS->c = whileCond + ":\n" + condicao.c +
+          "  " + valorNotCond + " = !" + condicao.v + ";\n" +
+          "  if( " + valorNotCond + " ) goto " + whileFim + ";\n" +
+          cmds.c +
+          "  goto " + whileCond + ";\n" + 
+          whileFim + ":\n";
 }
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {
