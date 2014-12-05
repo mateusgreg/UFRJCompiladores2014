@@ -265,6 +265,7 @@ CMD_ELSE : TK_ELSE BLOCO_COMANDO
          ;
 
 CMD_FOR : TK_FOR '(' CMD_ATRIB ';' OPERACAO ';' CMD_ATRIB ')' BLOCO_COMANDO
+	  { geraCodigoFor( &$$, $3, $5, $7, $9 ); }
         ;
 
 CMD_WHILE : TK_WHILE '(' OPERACAO ')' BLOCO_COMANDO 
@@ -509,6 +510,7 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cm
           "  " + ifFalse + ":\n" + cmdsElse.c +
           "  " + ifFim + ":\n";
 }
+
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
                                   const Atributo& passo, 

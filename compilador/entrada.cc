@@ -1,6 +1,6 @@
 int main() {
   
-  int a;
+  int a, i;
   int b[2];
   float f[10][2];
   
@@ -22,5 +22,9 @@ int main() {
   s2[2][5] = "de Souza";
   
   a = 0;
-  printf("\nO valor é %d\n", !a);  
+  printf("\nO valor é %d\n", !a);
+  
+  for ( i=0; i<10; i=i+1) {
+    printf("\nEstou no for!!!");
+  }
 }

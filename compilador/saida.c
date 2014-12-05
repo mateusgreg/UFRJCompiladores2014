@@ -8,10 +8,14 @@ int main(){
   float x_float;
 
   int temp_bool_1;
+  int temp_bool_2;
+  int temp_bool_3;
+  int temp_int_1;
   char temp_string_1[256];
   char temp_string_2[256];
 
   int a;
+int i;
   int b[2];
   float f[20];
   char s[256];
@@ -53,6 +57,17 @@ int main(){
   temp_bool_1 = !a;
 
   printf( "\nO valor é %d\n", temp_bool_1 );
+  i = 0;
+L_for_cond_1:
+  temp_bool_2 = i < 10;
+  temp_bool_3 = !temp_bool_2;
+  if( temp_bool_3 ) goto L_for_fim_1;
+  printf( "%s", "\nEstou no for!!!" );
+  temp_int_1 = i + 1;
+  i = temp_int_1;
+  goto L_for_cond_1;
+L_for_fim_1:
+
 
   return 0;
 }
