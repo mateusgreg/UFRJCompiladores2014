@@ -115,6 +115,8 @@ L_do_while_inicio_1:
   printf( "%s", "\n" );
   printf( "%s", s );
   printf( "%s", "\n" );
+  scanf( "%d", &i );
+  scanf( "%s", s );
 
   return 0;
 }

@@ -49,4 +49,6 @@ int main() {
   }while( i<10 );
   
   printf("\n" + s + "\n");
+  scanf(i);
+  scanf(s);
 }

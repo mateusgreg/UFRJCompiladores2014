@@ -424,7 +424,10 @@ PARAMETROS : VALOR ',' PARAMETROS
 
 //#TK_ID deve ser apenas do tipo TK_INT
 INDICE : CONST_INT
+         {  $$.v = $1.v; 
+            $$.t = Tipo( "int" ); }
        | TK_ID
+         {  $$ = $1; }
        ;
        
 CMD_PRINTF : TK_PRINTF '(' VALOR STR_PRINTF ')'
@@ -436,10 +439,13 @@ STR_PRINTF : '+' VALOR STR_PRINTF
            | { $$ = Atributo(); }
            ;
            
-CMD_SCANF : TK_SCANF '(' CONST_STRING ',' '&' TK_ID ')'
-	     { if ($6.t.nome == "string")
-	            $$.c = $3.c + $6.c + "  scanf( " + $3.v + ", "  + $6.v + " )";
-	       else $$.c = $3.c + $6.c + "  scanf( " + $3.v + ", &" + $6.v + " )";}
+CMD_SCANF : TK_SCANF '(' TK_ID ')'
+	     { if( buscaVariavelTS( ts, $3.v, &$$.t ) ){ 
+                 if ($$.t.nome == "string")
+	              $$.c = $3.c + "  scanf( \"%s\", "  + $3.v + " )";
+	         else $$.c = $3.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo($$.t.nome) + "\", &" + $3.v + " )"; 
+               } else erro( "Variavel nao declarada: " + $1.v );
+             }  
           ;
 %%
 int nlinha = 1;
