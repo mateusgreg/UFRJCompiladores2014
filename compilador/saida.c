@@ -70,13 +70,16 @@ int j;
   temp_int_3 = a + 3;
   a = temp_int_3;
 
-  printf( "\nO valor de 'a' é: %d\n", a );
+  printf( "%s", "\nO valor de 'a' é: " );
+  printf( "%d", a );
+  printf( "%s", "\n" );
   i = 0;
 L_for_cond_1:
   temp_bool_1 = i < 10;
   temp_bool_2 = !temp_bool_1;
   if( temp_bool_2 ) goto L_for_fim_1;
-  printf( "\nEstou no for!!! Iteracao: %d", i );
+  printf( "%s", "\nEstou no for!!! Iteracao: " );
+  printf( "%d", i );
   temp_int_4 = i + 1;
   i = temp_int_4;
   goto L_for_cond_1;
@@ -89,7 +92,8 @@ L_while_cond_1:
   temp_bool_3 = i < 10;
   temp_bool_4 = !temp_bool_3;
   if( temp_bool_4 ) goto L_while_fim_1;
-  printf( "\nEstou no while!!! Iteracao: %d", i );
+  printf( "%s", "\nEstou no while!!! Iteracao: " );
+  printf( "%d", i );
   temp_int_5 = i + 1;
   i = temp_int_5;
 
@@ -100,14 +104,17 @@ L_while_fim_1:
   i = 0;
 
 L_do_while_inicio_1:
-  printf( "\nEstou no do-while!!! Iteracao: %d", i );
+  printf( "%s", "\nEstou no do-while!!! Iteracao: " );
+  printf( "%d", i );
   temp_int_6 = i + 1;
   i = temp_int_6;
 
   temp_bool_5 = i < 10;
   if( temp_bool_5 ) goto L_do_while_inicio_1;
 
-  printf( "\n%s\n", s );
+  printf( "%s", "\n" );
+  printf( "%s", s );
+  printf( "%s", "\n" );
 
   return 0;
 }

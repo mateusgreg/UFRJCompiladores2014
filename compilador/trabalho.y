@@ -54,6 +54,7 @@ string geraLabel( string cmd );
 string geraDeclaracaoTemporarias();
 string geraDeclaracaoVarPipe();
 
+string obterCharDeDeclaracaoParaTipo(string tipo);
 void insereVariavelTS( TS&, string nomeVar, Tipo tipo );
 bool buscaVariavelTS( TS&, string nomeVar, Tipo* tipo );
 void erro( string msg );
@@ -426,10 +427,13 @@ INDICE : CONST_INT
        | TK_ID
        ;
        
-CMD_PRINTF : TK_PRINTF '(' CONST_STRING ')'
-	     { $$.c = $3.c + "  printf( \"%s\", " + $3.v + " )"; }
-           | TK_PRINTF '(' CONST_STRING ',' OPERACAO ')'
-	     { $$.c = $3.c + $5.c + "  printf( " + $3.v + ", " + $5.v + " )"; }
+CMD_PRINTF : TK_PRINTF '(' VALOR STR_PRINTF ')'
+	     { $$.c = $3.c + "  printf( \"%" + obterCharDeDeclaracaoParaTipo($3.t.nome) + "\", " + $3.v + " )" + $4.c; }
+           ;
+
+STR_PRINTF : '+' VALOR STR_PRINTF
+             { $$.c = ";\n" + $2.c + "  printf( \"%" + obterCharDeDeclaracaoParaTipo($2.t.nome) + "\", " + $2.v + " )" + $3.c; }
+           | { $$ = Atributo(); }
            ;
            
 CMD_SCANF : TK_SCANF '(' CONST_STRING ',' '&' TK_ID ')'
@@ -488,6 +492,15 @@ string geraTemp( Tipo tipo ) {
   return "temp_" + tipo.nome + "_" + toStr( ++n_var_temp[tipo.nome] );
 }
 
+string obterCharDeDeclaracaoParaTipo(string tipo){
+  if (tipo == "int") return "d";
+  if (tipo == "float") return "f";
+  if (tipo == "char") return "c";
+  if (tipo == "double") return "lf";
+  if (tipo == "bool") return "d";
+  if (tipo == "string") return "s";
+  return "d";
+}
 bool isTypeCompatibleWith(string lvalue, string rvalue){
   if (lvalue == rvalue) return true;
   
