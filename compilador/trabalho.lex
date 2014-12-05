@@ -23,10 +23,14 @@ STR     \"[^"\n]*\"
 ID      ({LETRA}({LETRA}|{NUMERO})*)
 ID_INC  (("<")({LETRA})*(".h")?(">")|(\")({LETRA})*(".h")?(\"))
 
+COMMENT "//".*
+
 %%
 
 {LINHA}    { nlinha++; }
 {DELIM}    {}
+{COMMENT}  {}
+
 {MAIN}     { return TK_MAIN; }
 
 {IF}       { yylval = Atributo( yytext ); return TK_IF; }
