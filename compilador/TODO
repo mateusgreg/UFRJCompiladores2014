@@ -3,7 +3,7 @@ Requisitos Funcionais:
 Para obter 5 pontos:
 X 1) Tipos: int, char, boolean, float, double, string
   2) Estruturas de controle: X if/else, for, while, do-while, switch.
-  3) Array bi-dimensional
+? 3) Array bi-dimensional (FALTA printf/scanf de Arrays)
 X 4) blocos
   5) Variáveis locais e globais, com escopo.
 X 6) Expressões com precedência e associatividade de operadores

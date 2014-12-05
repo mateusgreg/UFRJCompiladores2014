@@ -1,10 +1,26 @@
 int main() {
   
-  int b[10][2];
   int a;
-  b[2][1] = 3;
+  int b[2];
+  float f[10][2];
   
-  printf("Só que não\n");
-  printf("O valor é %d\n",!1);
+  string s;
+  string s1[10];
+  string s2[3][7];
   
+  s = 'M';
+  printf("%s", s);
+  
+  s = "\nFrase ";
+  s = s + "de" + " teste!";
+  printf("%s", s);
+  
+  s1[3] = "Mateus";
+  s1[5] = "Gregorio";
+  //printf(s1[3]);
+  
+  s2[2][5] = "de Souza";
+  
+  a = 0;
+  printf("\nO valor é %d\n", !a);  
 }

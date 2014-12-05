@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <map>
+#include <vector>
 
 using namespace std;
 
@@ -60,8 +61,9 @@ int toInt( string n );
 string toStr( int n );
 string toUpperString(string input);
 
-void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, int indice1, int indice2);
-string geraVariavelDeCodigoAtribuicao(const Atributo& lvalue, int indice1, int indice2);
+void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, int indice1, int indice2 );
+int calculaIndice( const Tipo& t, int indice1, int indice2 );
+vector<string> geraCodigoLvalueAtribuicao(const Atributo& lvalue, int indice1, int indice2);
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
 void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds );
@@ -78,8 +80,12 @@ void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
                                            const Atributo& id );
-                                           
-// Usando const Atributo& não cria cópia desnecessária
+
+//NÃO UTILIZE as funções abaixo isoladamente!! AO INVÉS DISSO, CHAME A FUNÇÃO void geraCodigoAtribuicao();
+string geraCodigoAtribuicaoVariavelSimples( const Atributo& lvalue, const Atributo& rvalue );
+string geraCodigoAtribuicaoVetor( const Atributo& lvalue, const Atributo& rvalue, int indice1, int indice2 );
+
+// Usando const Atributo& não cria cópia desnecessária.
 
 #define YYSTYPE Atributo
 
@@ -534,15 +540,21 @@ void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo&
   if( tipoNome == "bool") tipoNome = "int";
   if( tipoNome == "string") tipoNome = "char";
   
-  switch( id.t.nDim ) {
-    case 0: SS->c = tipo.c + tipoNome + " " + id.v; break;
-    case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 ) + "]"; break;
-    case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 ) + "]";
+  if ( tipo.t.nome == "string" ) {
+    switch( id.t.nDim ) {
+      case 0: SS->c = tipo.c + tipoNome + " " + id.v + "["+ toStr( MAX_STR ) +"]"; break;
+      case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * MAX_STR ) + "]"; break;
+      case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 * MAX_STR ) + "]";
+    }
+  } else {
+    switch( id.t.nDim ) {
+      case 0: SS->c = tipo.c + tipoNome + " " + id.v; break;
+      case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 ) + "]"; break;
+      case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 ) + "]";
+    }
   }
   
-  if( tipo.t.nome == "string" ) 
-    SS->c = SS->c + "["+ toStr( MAX_STR ) +"];\n";
-  else SS->c = SS->c + ";\n";
+  SS->c = SS->c + ";\n";
 }
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
   *SS = Atributo();
@@ -554,32 +566,65 @@ void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
            cmds.c + 
            "  return 0;\n" 
            "}\n";
-}  
-void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, int indice1, int indice2) {
-    if( buscaVariavelTS( ts, lvalue.v, &lvalue.t ) ) {
-	if(isTypeCompatibleWith(lvalue.t.nome, rvalue.t.nome)) {
-	    if( lvalue.t.nome == "string" ) {
-		if ( rvalue.t.nome == "string" ){
-		    SS->c = lvalue.c + rvalue.c + "  strncpy( " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + ", " + rvalue.v + ", " + 
-			    toStr( MAX_STR - 1 ) + " );\n" + "  " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
-		}
-		if ( rvalue.t.nome == "char" ){
-		    SS->c = lvalue.c + rvalue.c + "  " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + "[0] = " + rvalue.v + ";\n"
-		                                  "  " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + "[1] = 0;\n";
-		}
-	    } else SS->c = lvalue.c + rvalue.c + "  " + geraVariavelDeCodigoAtribuicao(lvalue, indice1, indice2) + " = " + rvalue.v + ";\n"; 
-	} else erro( "Expressao " + rvalue.t.nome + " nao pode ser atribuida a variavel " + lvalue.t.nome );
-    } else erro( "Variavel nao declarada: " + lvalue.v );
-} 
-string geraVariavelDeCodigoAtribuicao(const Atributo& lvalue, int indice1, int indice2){
-  switch ( lvalue.t.nDim ) {
-    case 0: return lvalue.v;
-    case 1: return lvalue.v + '[' + toStr(indice1) + ']';
-    case 2: return lvalue.v + '[' + toStr(indice1 * lvalue.t.d2 + indice2) + ']';
-  }
-  
-  return lvalue.v;
 }
+
+void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, int indice1, int indice2) {
+  if( buscaVariavelTS( ts, lvalue.v, &lvalue.t ) ) {
+    if(isTypeCompatibleWith(lvalue.t.nome, rvalue.t.nome)) {
+    
+      if ( lvalue.t.nDim == 0 )
+	SS->c = lvalue.c + rvalue.c + geraCodigoAtribuicaoVariavelSimples(lvalue, rvalue);
+      else
+	SS->c = lvalue.c + rvalue.c + geraCodigoAtribuicaoVetor(lvalue, rvalue, indice1, indice2);
+	
+    } else erro( "Expressao " + rvalue.t.nome + " nao pode ser atribuida a variavel " + lvalue.t.nome );
+  } else erro( "Variavel nao declarada: " + lvalue.v );
+}
+
+string geraCodigoAtribuicaoVariavelSimples( const Atributo& lvalue, const Atributo& rvalue ) {
+  
+  if( lvalue.t.nome == "string" ) {
+    if ( rvalue.t.nome == "string" ) {
+      return "  strncpy( " + lvalue.v + ", " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+	     "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
+    }
+    if ( rvalue.t.nome == "char" ) {
+      return "  " + lvalue.v + "[0] = " + rvalue.v + ";\n"
+	     "  " + lvalue.v + "[1] = 0;\n";
+    }
+  } else return "  " + lvalue.v + " = " + rvalue.v + ";\n";
+  
+}
+
+string geraCodigoAtribuicaoVetor( const Atributo& lvalue, const Atributo& rvalue, int indice1, int indice2 ) {
+  
+  if( lvalue.t.nome == "string" ) {
+    if ( rvalue.t.nome == "string" ) {
+      return "  strncpy( &" + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + "], " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+	     //"  snprintf( " + lvalue.v + "+" + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + ", " + toStr( MAX_STR - 1 ) + ", \"%s\", " + rvalue.v + " );\n"
+	     "  " + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, indice1, indice2) + MAX_STR - 1 ) + "] = 0;\n";
+    }
+    if ( rvalue.t.nome == "char" ) {
+      return "  " + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + " = " + rvalue.v + ";\n"
+	     "  " + toStr( calculaIndice(lvalue.t, indice1, indice2) + 1) + " = 0;\n";
+    }
+  } else return "  " + lvalue.v + "[ " + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + "] = " + rvalue.v + ";\n";
+}
+
+int calculaIndice ( const Tipo& t, int indice1, int indice2 ) {
+  if ( t.nome == "string" ) {
+    switch ( t.nDim ) {
+      case 1: return indice1 * MAX_STR;
+      case 2: return ( indice1 * t.d2 + indice2 ) * MAX_STR;
+    }
+  } else {
+    switch ( t.nDim ) {
+      case 1: return indice1;
+      case 2: return indice1 * t.d2 + indice2;
+    }
+  }
+}
+
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 ) {
   SS->t = tipoResultado( S1.t, S2.v, S3.t );
   SS->v = geraTemp( SS->t );
