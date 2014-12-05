@@ -12,6 +12,7 @@ DO      [Dd][Oo]
 SWITCH  [Ss][Ww][Ii][Tt][Cc][Hh]
 CASE    [Cc][Aa][Ss][Ee]
 DEFAULT [Dd][Ee][Ff][Aa][Uu][Ll][Tt]
+BREAK   [Bb][Rr][Ee][Aa][Kk]
 
 INT     {NUMERO}+
 DOUBLE  {NUMERO}+("."{NUMERO}+)?
@@ -41,6 +42,7 @@ COMMENT "//".*
 {SWITCH}   { yylval = Atributo( yytext ); return TK_SWITCH; }
 {CASE}     { yylval = Atributo( yytext ); return TK_CASE; }
 {DEFAULT}  { yylval = Atributo( yytext ); return TK_DEFAULT; }
+{BREAK}    { yylval = Atributo( yytext ); return TK_BREAK; }
 "interval" { yylval = Atributo( yytext ); return TK_INTERVAL; }
 "filter"   { yylval = Atributo( yytext ); return TK_FILTER; }
 "forEach"  { yylval = Atributo( yytext ); return TK_FOR_EACH; }

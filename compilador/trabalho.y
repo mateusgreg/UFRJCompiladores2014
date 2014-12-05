@@ -47,6 +47,7 @@ TS ts; // Tabela de simbolos
 
 string pipeAtivo; // Tipo do pipe ativo
 string passoPipeAtivo; // Label 'fim' do pipe ativo
+string valorExprSwitch; // Expressao do switch
 
 Tipo tipoResultado( Tipo a, string operador, Tipo b );
 string geraTemp( Tipo tipo );
@@ -73,6 +74,15 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr,
 
 void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, 
                                         const Atributo& cmdsThen );
+
+void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch,
+                                         const Atributo& exprCase,
+                                         const Atributo& cmdsCase );
+
+void geraCodigoCase( Atributo* SS, const Atributo& exprCase, 
+                                   const Atributo& cmdsCase );
+
+void geraCodigoDefault( Atributo* SS, const Atributo& cmds );
 
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
@@ -103,7 +113,7 @@ int yyparse();
 void yyerror(const char *);
 %}
 
-%token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT
+%token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK
 %token TK_INTERVAL TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT
 %token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
 %token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
@@ -284,13 +294,22 @@ CMD_DO_WHILE : TK_DO BLOCO_COMANDO TK_WHILE '(' OPERACAO ')'
 	       { geraCodigoDoWhile( &$$, $2, $5 ); }
              ;
 
-CMD_SWITCH : TK_SWITCH '(' INDICE ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}' 
+CMD_SWITCH : TK_SWITCH SW '}'
+	     { $$ = $2; }
            ;
 
-CMD_CASE : TK_CASE INDICE ':' COMANDOS CMD_CASE 
-         |
-         ;
+SW : CMD_CASE TK_DEFAULT ':' COMANDOS
+     { geraCodigoDefault( &$$, $4 ); }
+   ;
 
+CMD_CASE : '(' INDICE ')' '{' TK_CASE INDICE ':' COMANDOS
+	   { geraCodigoSwitchCase(&$$, $2, $6, $8 ); }
+         | CMD_CASE TK_CASE INDICE ':' COMANDOS
+	   { geraCodigoCase(&$$, $3, $5 ); }
+	 |
+	   { $$ = Atributo(); }
+         ;
+         
 CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
              ;
 
@@ -527,6 +546,39 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cm
           "  goto " + ifFim + ";\n" +
           "  " + ifFalse + ":\n" + cmdsElse.c +
           "  " + ifFim + ":\n";
+}
+
+void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch,
+                                         const Atributo& exprCase,
+                                         const Atributo& cmdsCase ) {
+  valorExprSwitch = exprSwitch.v;
+  string ifFimCase = geraLabel( "if_fim_case" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+  
+  *SS = Atributo();
+  SS->c = exprSwitch.c + exprCase.c +
+	  "  " + valorNotCond + " = " + exprCase.v + " != " + exprSwitch.v + ";\n"
+	  "  if( " + valorNotCond + " ) goto " + ifFimCase + ";\n" +
+	  cmdsCase.c +
+	  ifFimCase + ":\n";
+}
+
+void geraCodigoCase( Atributo* SS, const Atributo& exprCase, 
+                                   const Atributo& cmdsCase ) {
+  string ifFimCase = geraLabel( "if_fim_case" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+  
+  SS->c = SS->c + 
+	  "  " + valorNotCond + " = " + exprCase.v + " != " + valorExprSwitch + ";\n"
+	  "  if( " + valorNotCond + " ) goto " + ifFimCase + ";\n" +
+	  cmdsCase.c +
+	  ifFimCase + ":\n";
+}
+
+void geraCodigoDefault( Atributo* SS, const Atributo& cmds ) {
+  SS->c = SS->c + 
+          cmds.c +
+          "\n";
 }
 
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 

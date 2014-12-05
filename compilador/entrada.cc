@@ -48,5 +48,13 @@ int main() {
     i++;
   }while( i<10 );
   
-  printf("\n%s\n", s);
+  printf("\n\n");
+  
+  switch(1) {
+    case 1: printf("Case 1\n");
+    case 2: printf("Case 2\n");
+    default: printf("Default\n");
+  }
+  
+  printf("%s\n", s);
 }

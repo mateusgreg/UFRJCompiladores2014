@@ -12,6 +12,8 @@ int main(){
   int temp_bool_3;
   int temp_bool_4;
   int temp_bool_5;
+  int temp_bool_6;
+  int temp_bool_7;
   int temp_int_1;
   int temp_int_2;
   int temp_int_3;
@@ -107,7 +109,19 @@ L_do_while_inicio_1:
   temp_bool_5 = i < 10;
   if( temp_bool_5 ) goto L_do_while_inicio_1;
 
-  printf( "\n%s\n", s );
+  printf( "%s", "\n\n" );
+  temp_bool_6 = 1 != 1;
+  if( temp_bool_6 ) goto L_if_fim_case_1;
+  printf( "%s", "Case 1\n" );
+L_if_fim_case_1:
+  temp_bool_7 = 2 != 1;
+  if( temp_bool_7 ) goto L_if_fim_case_2;
+  printf( "%s", "Case 2\n" );
+L_if_fim_case_2:
+  printf( "%s", "Default\n" );
+
+
+  printf( "%s\n", s );
 
   return 0;
 }
