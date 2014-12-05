@@ -41,4 +41,12 @@ int main() {
   }
   
   printf("\n");
+  
+  i=0;
+  do {
+    printf("\nEstou no do-while!!! Iteracao: %d", i);
+    i++;
+  }while( i<10 );
+  
+  printf("\n%s\n", s);
 }

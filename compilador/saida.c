@@ -11,11 +11,13 @@ int main(){
   int temp_bool_2;
   int temp_bool_3;
   int temp_bool_4;
+  int temp_bool_5;
   int temp_int_1;
   int temp_int_2;
   int temp_int_3;
   int temp_int_4;
   int temp_int_5;
+  int temp_int_6;
   char temp_string_1[256];
   char temp_string_2[256];
 
@@ -95,6 +97,17 @@ L_while_cond_1:
 L_while_fim_1:
 
   printf( "%s", "\n" );
+  i = 0;
+
+L_do_while_inicio_1:
+  printf( "\nEstou no do-while!!! Iteracao: %d", i );
+  temp_int_6 = i + 1;
+  i = temp_int_6;
+
+  temp_bool_5 = i < 10;
+  if( temp_bool_5 ) goto L_do_while_inicio_1;
+
+  printf( "\n%s\n", s );
 
   return 0;
 }

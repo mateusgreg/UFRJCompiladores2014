@@ -70,8 +70,10 @@ void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds );
 void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, 
                                         const Atributo& cmdsThen,
                                         const Atributo& cmdsElse );
+
 void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, 
                                         const Atributo& cmdsThen );
+
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
                                   const Atributo& passo, 
@@ -79,6 +81,9 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial,
                                   
 void geraCodigoWhile( Atributo* SS, const Atributo& condicao, 
                                     const Atributo& cmds );
+
+void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, 
+                                      const Atributo& condicao );
                                   
 void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
 
@@ -230,24 +235,23 @@ COMANDOS : COMANDO COMANDOS
          ;
 
 COMANDO : CMD_ATRIB ';'
-          {$$ = $1; }
+          { $$ = $1; }
         | CMD_DO_WHILE ';'
-          {$$ = $1;
-           $$.c += ";"; }
+          { $$ = $1; }
         | CMD_RETURN ';'
-          {$$ = $1;
-           $$.c += ";"; }
+          { $$ = $1;
+            $$.c += ";"; }
         | FUN_PROC ';'
-          {$$ = $1;
-           $$.c += ";"; }
+          { $$ = $1;
+            $$.c += ";"; }
         | CMD_PRINTF ';'
-          {$$ = $1;
-           $$.c += ";"; }
+          { $$ = $1;
+            $$.c += ";"; }
         | CMD_SCANF ';'
-          {$$ = $1;
-           $$.c += ";"; }
+          { $$ = $1;
+            $$.c += ";"; }
         | COMANDO_BLOCO
-          {$$ = $1; }
+          { $$ = $1; }
         ;
 
 COMANDO_BLOCO : CMD_IF_ELSE
@@ -276,7 +280,8 @@ CMD_WHILE : TK_WHILE '(' OPERACAO ')' BLOCO_COMANDO
 	    { geraCodigoWhile( &$$, $3, $5 ); }
           ;
 
-CMD_DO_WHILE : TK_DO BLOCO TK_WHILE '(' OPERACAO ')'
+CMD_DO_WHILE : TK_DO BLOCO_COMANDO TK_WHILE '(' OPERACAO ')'
+	       { geraCodigoDoWhile( &$$, $2, $5 ); }
              ;
 
 CMD_SWITCH : TK_SWITCH '(' INDICE ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}' 
@@ -563,6 +568,18 @@ void geraCodigoWhile( Atributo* SS, const Atributo& condicao,
           cmds.c +
           "  goto " + whileCond + ";\n" + 
           whileFim + ":\n";
+}
+
+void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, 
+                                      const Atributo& condicao ) {
+  string whileInicio = geraLabel( "do_while_inicio" );
+  
+  *SS = Atributo();
+  if( condicao.t.nome != "bool" )
+    erro( "A expressão de teste deve ser booleana: " + condicao.t.nome ); 
+  
+  SS->c = whileInicio + ":\n" + cmds.c + condicao.c +
+          "  if( " + condicao.v + " ) goto " + whileInicio + ";\n";
 }
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {
