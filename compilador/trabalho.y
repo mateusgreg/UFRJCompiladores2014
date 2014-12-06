@@ -409,6 +409,17 @@ VALOR : CONST_INT
              erro( "Variavel nao declarada: " + $1.v );
         }
       | TK_ID '[' INDICE ']'
+        { if( buscaVariavelTS( ts, $1.v, &$$.t ) ) 
+             $$.v = $1.v + "[" + toStr( calculaIndice( $$.t, toInt($3.v), 0 ) ) + "]";
+          else
+             erro( "Variavel nao declarada: " + $1.v );
+        }
+      | TK_ID '[' INDICE ']' '[' INDICE ']'
+        { if( buscaVariavelTS( ts, $1.v, &$$.t ) ) 
+             $$.v = $1.v + "[" + toStr( calculaIndice( $$.t, toInt($3.v), toInt($6.v) ) ) + "]";
+          else
+             erro( "Variavel nao declarada: " + $1.v );
+        }
       | TK_ID '(' PARAMETROS ')'
       | TK_ID '(' ')'
       | FUN_SORT
@@ -431,7 +442,11 @@ INDICE : CONST_INT
        ;
        
 CMD_PRINTF : TK_PRINTF '(' VALOR STR_PRINTF ')'
-	     { $$.c = $3.c + "  printf( \"%" + obterCharDeDeclaracaoParaTipo($3.t.nome) + "\", " + $3.v + " )" + $4.c; }
+	     { if ( $3.t.nDim == 0)
+                 $$.c = $3.c + "  printf( \"%" + obterCharDeDeclaracaoParaTipo($3.t.nome) + "\", " + $3.v + " )" + $4.c;
+               else
+                 $$.c = $3.c + "  printf( \"%" + obterCharDeDeclaracaoParaTipo($3.t.nome) + "\", &" + $3.v + " )" + $4.c;
+             }
            ;
 
 STR_PRINTF : '+' VALOR STR_PRINTF

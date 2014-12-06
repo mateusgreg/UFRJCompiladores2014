@@ -7,17 +7,7 @@ int main(){
   double x_double;
   float x_float;
 
-  int temp_bool_1;
-  int temp_bool_2;
-  int temp_bool_3;
-  int temp_bool_4;
-  int temp_bool_5;
   int temp_int_1;
-  int temp_int_2;
-  int temp_int_3;
-  int temp_int_4;
-  int temp_int_5;
-  int temp_int_6;
   char temp_string_1[256];
   char temp_string_2[256];
 
@@ -43,75 +33,40 @@ int j;
 
 
   strncpy( temp_string_2, temp_string_1, 255 );
-  strncat( temp_string_2, " teste!", 255 );
+  strncat( temp_string_2, " teste!\n", 255 );
   temp_string_2[255] = 0;
 
   strncpy( s, temp_string_2, 255 );
   s[255] = 0;
 
   printf( "%s", s );
-  strncpy( &s1[768], "Mateus", 255 );
+  strncpy( &s1[768], "Mateus ", 255 );
   s1[1023] = 0;
 
-  strncpy( &s1[1280], "Gregorio", 255 );
+  strncpy( &s1[1280], "Gregorio ", 255 );
   s1[1535] = 0;
 
+  printf( "%s", &s1[768] );
   strncpy( &s2[4864], "de Souza", 255 );
   s2[5119] = 0;
 
+  printf( "%s", &s2[4864] );
   a = 10;
 
+  printf( "%s", "\na = " );
+  printf( "%d", a );
+  b[ 1] = 50;
+
+  a = b[1];
+
+  printf( "%s", "\na = " );
+  printf( "%d", a );
   temp_int_1 = a + 1;
   a = temp_int_1;
-
-  temp_int_2 = a + 1;
-  a = temp_int_2;
-
-  temp_int_3 = a + 3;
-  a = temp_int_3;
 
   printf( "%s", "\nO valor de 'a' é: " );
   printf( "%d", a );
   printf( "%s", "\n" );
-  i = 0;
-L_for_cond_1:
-  temp_bool_1 = i < 10;
-  temp_bool_2 = !temp_bool_1;
-  if( temp_bool_2 ) goto L_for_fim_1;
-  printf( "%s", "\nEstou no for!!! Iteracao: " );
-  printf( "%d", i );
-  temp_int_4 = i + 1;
-  i = temp_int_4;
-  goto L_for_cond_1;
-L_for_fim_1:
-
-  printf( "%s", "\n" );
-  i = 0;
-
-L_while_cond_1:
-  temp_bool_3 = i < 10;
-  temp_bool_4 = !temp_bool_3;
-  if( temp_bool_4 ) goto L_while_fim_1;
-  printf( "%s", "\nEstou no while!!! Iteracao: " );
-  printf( "%d", i );
-  temp_int_5 = i + 1;
-  i = temp_int_5;
-
-  goto L_while_cond_1;
-L_while_fim_1:
-
-  printf( "%s", "\n" );
-  i = 0;
-
-L_do_while_inicio_1:
-  printf( "%s", "\nEstou no do-while!!! Iteracao: " );
-  printf( "%d", i );
-  temp_int_6 = i + 1;
-  i = temp_int_6;
-
-  temp_bool_5 = i < 10;
-  if( temp_bool_5 ) goto L_do_while_inicio_1;
-
   printf( "%s", "\n" );
   printf( "%s", s );
   printf( "%s", "\n" );

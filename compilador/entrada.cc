@@ -12,41 +12,28 @@ int main() {
   printf(s);
   
   s = "\nFrase ";
-  s = s + "de" + " teste!";
+  s = s + "de" + " teste!\n";
   printf(s);
   
-  s1[3] = "Mateus";
-  s1[5] = "Gregorio";
+  s1[3] = "Mateus ";
+  s1[5] = "Gregorio ";
+  printf(s1[3]);
+  
+  //s1[3] = s1[5];
   //printf(s1[3]);
   
   s2[2][5] = "de Souza";
-  
+  printf(s2[2][5]);
+    
   a = 10;
-  a++;
-  a++;
-  a = a+3;
+  printf("\na = " + a);
   
+  b[1] = 50;
+  a = b[1];
+  printf("\na = " + a);
+  
+  a++;
   printf("\nO valor de 'a' é: " + a + "\n");
-  
-  for ( i=0; i<10; i++) {
-    printf("\nEstou no for!!! Iteracao: " + i);
-  }
-  
-  printf("\n");
-  
-  i=0;
-  while ( i<10 ) {
-    printf("\nEstou no while!!! Iteracao: " + i);
-    i++;
-  }
-  
-  printf("\n");
-  
-  i=0;
-  do {
-    printf("\nEstou no do-while!!! Iteracao: " + i);
-    i++;
-  }while( i<10 );
   
   printf("\n" + s + "\n");
   scanf(i);
