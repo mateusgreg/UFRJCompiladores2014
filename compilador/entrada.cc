@@ -39,15 +39,19 @@ int main() {
   a++;
   printf("\nO valor de 'a' é: " + a + "\n");
   
-  f[2][7] = 3.5;
-  printf("\nf = " + f[2][7]);
+  f[7][1] = 3.5;
+  printf("\nf = " + f[7][1]);
   
-  g = f[2][7];
+  g = f[7][1];
   printf("\ng = " + g);
   
   printf("\n\nEntre com um numero inteiro: ");
-  scanf(i);
-  printf("Você digitou: " + i + "\n");
+  scanf(b[1]);
+  printf("Você digitou: " + b[1] + "\n");
+  
+  printf("\nEntre com um numero real (float): ");
+  scanf(f[7][1]);
+  printf("Você digitou: " + f[7][1] + "\n");
   
   printf("\nAgora entre com uma palavra: ");
   scanf(s);
