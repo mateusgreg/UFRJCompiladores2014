@@ -669,8 +669,12 @@ string geraCodigoAtribuicaoVariavelSimples( const Atributo& lvalue, const Atribu
   
   if( lvalue.t.nome == "string" ) {
     if ( rvalue.t.nome == "string" ) {
-      return "  strncpy( " + lvalue.v + ", " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
-	     "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
+      if ( rvalue.t.nDim == 0 )
+        return "  strncpy( " + lvalue.v + ", " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+	       "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
+      else
+        return "  strncpy( " + lvalue.v + ", &" + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+	       "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
     }
     if ( rvalue.t.nome == "char" ) {
       return "  " + lvalue.v + "[0] = " + rvalue.v + ";\n"
@@ -684,9 +688,12 @@ string geraCodigoAtribuicaoVetor( const Atributo& lvalue, const Atributo& rvalue
   
   if( lvalue.t.nome == "string" ) {
     if ( rvalue.t.nome == "string" ) {
-      return "  strncpy( &" + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + "], " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
-	     //"  snprintf( " + lvalue.v + "+" + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + ", " + toStr( MAX_STR - 1 ) + ", \"%s\", " + rvalue.v + " );\n"
-	     "  " + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, indice1, indice2) + MAX_STR - 1 ) + "] = 0;\n";
+      if ( rvalue.t.nDim == 0 )
+        return "  strncpy( &" + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + "], " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+	       "  " + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, indice1, indice2) + MAX_STR - 1 ) + "] = 0;\n";
+      else
+        return "  strncpy( &" + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + "], &" + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+	       "  " + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, indice1, indice2) + MAX_STR - 1 ) + "] = 0;\n";
     }
     if ( rvalue.t.nome == "char" ) {
       return "  " + toStr( calculaIndice(lvalue.t, indice1, indice2) ) + " = " + rvalue.v + ";\n"

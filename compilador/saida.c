@@ -16,6 +16,7 @@ int i;
 int j;
   int b[2];
   float f[20];
+  float g;
   char s[256];
   char s1[2560];
   char s2[5376];
@@ -47,10 +48,21 @@ int j;
   s1[1535] = 0;
 
   printf( "%s", &s1[768] );
+  printf( "%s", "\n" );
+  strncpy( &s1[768], &s1[1280], 255 );
+  s1[1023] = 0;
+
+  printf( "%s", &s1[768] );
+  printf( "%s", "\n" );
   strncpy( &s2[4864], "de Souza", 255 );
   s2[5119] = 0;
 
   printf( "%s", &s2[4864] );
+  printf( "%s", "\n" );
+  strncpy( s, &s2[4864], 255 );
+  s[255] = 0;
+
+  printf( "%s", s );
   a = 10;
 
   printf( "%s", "\na = " );
@@ -67,11 +79,24 @@ int j;
   printf( "%s", "\nO valor de 'a' é: " );
   printf( "%d", a );
   printf( "%s", "\n" );
+  f[ 11] = 3.5;
+
+  printf( "%s", "\nf = " );
+  printf( "%f", f[11] );
+  g = f[11];
+
+  printf( "%s", "\ng = " );
+  printf( "%f", g );
+  printf( "%s", "\n\nEntre com um numero inteiro: " );
+  scanf( "%d", &i );
+  printf( "%s", "Você digitou: " );
+  printf( "%d", i );
   printf( "%s", "\n" );
+  printf( "%s", "\nAgora entre com uma palavra: " );
+  scanf( "%s", s );
+  printf( "%s", "Você digitou: " );
   printf( "%s", s );
   printf( "%s", "\n" );
-  scanf( "%d", &i );
-  scanf( "%s", s );
 
   return 0;
 }

@@ -3,6 +3,7 @@ int main() {
   int a, i, j;
   int b[2];
   float f[10][2];
+  float g;
   
   string s;
   string s1[10];
@@ -17,14 +18,17 @@ int main() {
   
   s1[3] = "Mateus ";
   s1[5] = "Gregorio ";
-  printf(s1[3]);
+  printf(s1[3] + "\n");
   
-  //s1[3] = s1[5];
-  //printf(s1[3]);
+  s1[3] = s1[5];
+  printf(s1[3] + "\n");
   
   s2[2][5] = "de Souza";
-  printf(s2[2][5]);
-    
+  printf(s2[2][5] + "\n");
+  
+  s = s2[2][5];
+  printf(s);
+  
   a = 10;
   printf("\na = " + a);
   
@@ -35,7 +39,17 @@ int main() {
   a++;
   printf("\nO valor de 'a' é: " + a + "\n");
   
-  printf("\n" + s + "\n");
+  f[2][7] = 3.5;
+  printf("\nf = " + f[2][7]);
+  
+  g = f[2][7];
+  printf("\ng = " + g);
+  
+  printf("\n\nEntre com um numero inteiro: ");
   scanf(i);
+  printf("Você digitou: " + i + "\n");
+  
+  printf("\nAgora entre com uma palavra: ");
   scanf(s);
+  printf("Você digitou: " + s + "\n");
 }
