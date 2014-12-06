@@ -2,14 +2,14 @@ Requisitos Funcionais:
 
 Para obter 5 pontos:
 X 1) Tipos: int, char, boolean, float, double, string
-  2) Estruturas de controle: X if/else, X for, X while, X do-while, switch.
+? 2) Estruturas de controle: X if/else, X for, X while, X do-while, ? switch (Codigo em desenvolvimento na branch 'switch').
 X 3) Array bi-dimensional
 X 4) blocos
   5) Variáveis locais e globais, com escopo.
 X 6) Expressões com precedência e associatividade de operadores
   7) funções com parametros por valor e referência
 X 8) concatenação de strings com operador "+"
-? 9) entrada e saida padrao (X printf e ? scanf)
+X 9) entrada e saida padrao (printf e scanf)
 X 9) verificação de tipos
   10) verificação do número e tipo dos parâmetros de funções
 X 11) Operadores básicos: ( ) + - / * % && || ! > < >=
