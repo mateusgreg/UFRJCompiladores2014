@@ -3,6 +3,16 @@ all: trabalho entrada.cc
 	../gabarito/trabalho < saida.c
 	g++ -o saida saida.c
 	./saida
+	
+#	./trabalho < entrada_mdc.cc > saida_mdc.c
+#	../gabarito/trabalho < saida_mdc.c
+#	g++ -o saida_mdc saida_mdc.c
+#	./saida_mdc
+	
+#	./trabalho < entrada_matrizes.cc > saida_matrizes.c
+#	../gabarito/trabalho < saida_matrizes.c
+#	g++ -o saida_matrizes saida_matrizes.c
+#	./saida_matrizes
 
 lex.yy.c: trabalho.lex
 	lex trabalho.lex

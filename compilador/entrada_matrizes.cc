@@ -10,11 +10,9 @@ int main() {
   
   for (i=0; i < 3; i++) {
     for (j=0; j < 4; j++) {
-      a[i][j] = i+j+0;
+      a[i][j] = i+j;
     }
   }
-  
-  printf( "a[2][3] = " + a[2][3] + "\n" );
   
  for (i=0; i < 3; i++) {
     for (j=0; j < 4; j++) {
