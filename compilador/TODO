@@ -1,6 +1,7 @@
 Requisitos Funcionais:
 
 Para obter 5 pontos:
+
 X 1) Tipos: int, char, boolean, float, double, string
 ? 2) Estruturas de controle: X if/else, X for, X while, X do-while, ? switch (Codigo em desenvolvimento na branch 'switch').
 X 3) Array bi-dimensional
@@ -13,8 +14,15 @@ X 9) entrada e saida padrao (printf e scanf)
 X 9) verificação de tipos
   10) verificação do número e tipo dos parâmetros de funções
 X 11) Operadores básicos: ( ) + - / * % && || ! > < >=
+----------------------------------------------------------------
+Exemplos de programas:
+I)   Um programa de MDC recursivo que peça dois números ao usuário e imprima o MDC. Use a fórmula mdc( a, b ) = mdc( a % b, b ) e mdc( a, 0 ) = a.
+II)  Declare e inicialize duas matrizes, uma 3 x 4 e outra 4 x 10. Calcule e imprima o produto delas (não precisa ler as matrizes do teclado)
+III) faça um programa interativo que peça ao usuário para entrar com 3 coeficientes reais a,b e c, e calcule as raízes da equação de segundo grau a*x² + b*x + c = 0. Mostre o uso de funções na linguagem criando uma função discrimante(a,b,c) que calcule o discriminante. Use os comandos estruturados (if ou switch) para imprimir as raízes reais ou imaginárias. Pergunte se o usuário quer entrar com outra equação e a resposta deve ser em texto "sim" ou "nao".
+----------------------------------------------------------------
 
 Acima de 5 pontos:
+
 Pipes:
 Até 9 pontos:
 12) intervalo: [ 0 .. 10 ] 
@@ -26,3 +34,12 @@ Até 9 pontos:
 
 Para ter 10:
 18) split[ x > 6 ]( a, b )
+
+----------------------------------------------------------------
+Exemplos de programas:
+IV) Faça um exemplo de filtro com forEach lendo os dados de um array (se você implementou pipes).    
+    Ex: int tab[10];
+        tab => filter[ x > 0] => forEach[ cout << x << "\n" ];
+
+V)  Faça um (ou dois) pipes com todos os outros comandos de pipes que você tiver implementado.
+----------------------------------------------------------------
