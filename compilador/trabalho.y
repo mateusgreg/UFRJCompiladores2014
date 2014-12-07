@@ -64,7 +64,7 @@ string toUpperString( string input );
 
 void geraCodigoScanf( Atributo* SS, const Atributo& id, int indice1, int indice2 );
 void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, string indice1 = "0", string indice2 = "0" );
-string geraCodigoCalculoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
+Atributo geraCodigoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
 void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds );
@@ -440,17 +440,17 @@ VALOR : CONST_INT
         }
       | TK_ID '[' INDICE ']'
         { if( buscaVariavelTS( ts, $1.v, &$$.t ) ) {
-	     string varIndice = geraTemp ( Tipo ( "int" ) );
-	     $$.c = "  " + varIndice + " = " + geraCodigoCalculoIndice( $$.t, $1.v, $3.v ) + ";\n";
-             $$.v = $1.v + "[" + varIndice + "]";
+	     Atributo indice = geraCodigoIndice( $$.t, $1.v, $3.v );
+	     $$.c = indice.c;
+             $$.v = $1.v + "[" + indice.v + "]";
           }else
              erro( "Variavel nao declarada: " + $1.v );
         }
       | TK_ID '[' INDICE ']' '[' INDICE ']'
         { if( buscaVariavelTS( ts, $1.v, &$$.t ) ) {
-             string varIndice = geraTemp ( Tipo ( "int" ) );
-	     $$.c = "  " + varIndice + " = " + geraCodigoCalculoIndice( $$.t, $1.v, $3.v, $6.v ) + ";\n";
-             $$.v = $1.v + "[" + varIndice + "]";
+             Atributo indice = geraCodigoIndice( $$.t, $1.v, $3.v, $6.v );
+	     $$.c = indice.c;
+             $$.v = $1.v + "[" + indice.v + "]";
           }else
              erro( "Variavel nao declarada: " + $1.v );
         }
@@ -717,7 +717,7 @@ void geraCodigoScanf( Atributo* SS, const Atributo& id, int indice1, int indice2
     if (SS->t.nDim == 0)
       SS->c = id.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo(SS->t.nome) + "\", &" + id.v + " )";
     else
-      SS->c = id.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo(SS->t.nome) + "\", &" + id.v + "[" + /*toStr( calculaIndice(SS->t, id.v, indice1, indice2) )*/ + "]" + " )";
+      SS->c = id.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo(SS->t.nome) + "\", &" + id.v + "[" + /*toStr( geraCodigoIndice(SS->t, id.v, indice1, indice2) )*/ + "]" + " )";
   }else erro( "Variavel nao declarada: " + id.v );
 }
 
@@ -755,62 +755,95 @@ string geraCodigoAtribuicaoVariavelSimples( const Atributo& lvalue, const Atribu
 
 string geraCodigoAtribuicaoVetor( const Atributo& lvalue, const Atributo& rvalue, string indice1, string indice2 ) {
   string codigoTemporarias, codigoAtrib;
-  string varIndice = geraTemp ( Tipo( "int" ) );
+  Atributo indice = geraCodigoIndice(lvalue.t, lvalue.v, indice1, indice2);
   
   if( lvalue.t.nome == "string" ) {
     string varIndiceFimString = geraTemp ( Tipo( "int" ) );
     
     if ( rvalue.t.nome == "string" ) {
       if ( rvalue.t.nDim == 0 ) {
-        codigoTemporarias = "  " + varIndice + " = " + geraCodigoCalculoIndice(lvalue.t, lvalue.v, indice1, indice2) + ";\n"
-                            "  " + varIndiceFimString + " = " + varIndice + " + " + toStr( MAX_STR - 1 ) + ";\n";
-        codigoAtrib = "  strncpy( &" + lvalue.v + "[" + varIndice + "], " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+        codigoTemporarias = indice.c +
+                            "  " + varIndiceFimString + " = " + indice.v + " + " + toStr( MAX_STR - 1 ) + ";\n";
+        codigoAtrib = "  strncpy( &" + lvalue.v + "[" + indice.v + "], " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
                       "  " + lvalue.v + "[" + varIndiceFimString + "] = 0;\n";
+        
         return codigoTemporarias + codigoAtrib;
       }else {
-         codigoTemporarias = "  " + varIndice + " = " + geraCodigoCalculoIndice(lvalue.t, lvalue.v, indice1, indice2) + ";\n"
-                             "  " + varIndiceFimString + " = " + varIndice + " + " + toStr( MAX_STR - 1 ) + ";\n";
-         codigoAtrib = "  strncpy( &" + lvalue.v + "[" + varIndice + "], &" + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+         codigoTemporarias = indice.c +
+                             "  " + varIndiceFimString + " = " + indice.v + " + " + toStr( MAX_STR - 1 ) + ";\n";
+         codigoAtrib = "  strncpy( &" + lvalue.v + "[" + indice.v + "], &" + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
                        "  " + lvalue.v + "[" + varIndiceFimString + "] = 0;\n";
+         
          return codigoTemporarias + codigoAtrib;
       }
     }
     
     if ( rvalue.t.nome == "char" ) {
-      codigoTemporarias = "  " + varIndice + " = " + geraCodigoCalculoIndice(lvalue.t, lvalue.v, indice1, indice2) + ";\n"
-                          "  " + varIndiceFimString + " = " + varIndice + " + 1;\n";
-      codigoAtrib = "  " + lvalue.v + "[" + varIndice + "] = " + rvalue.v + ";\n"
+      codigoTemporarias = indice.c +
+                          "  " + varIndiceFimString + " = " + indice.v + " + 1;\n";
+      codigoAtrib = "  " + lvalue.v + "[" + indice.v + "] = " + rvalue.v + ";\n"
                     "  " + lvalue.v + "[" + varIndiceFimString + "] = 0;\n";
+      
       return codigoTemporarias + codigoAtrib;
     }
   }else{
-    codigoTemporarias = "  " + varIndice + " = " + geraCodigoCalculoIndice(lvalue.t, lvalue.v, indice1, indice2) + ";\n";
-    codigoAtrib = "  " + lvalue.v + "[" + varIndice + "] = " + rvalue.v + ";\n";
+    codigoTemporarias = indice.c;
+    codigoAtrib = "  " + lvalue.v + "[" + indice.v + "] = " + rvalue.v + ";\n";
+    
     return codigoTemporarias + codigoAtrib;
   }
 }
 
-string geraCodigoCalculoIndice ( const Tipo& t, string id, string indice1, string indice2 ) {
+Atributo geraCodigoIndice( const Tipo& t, string id, string indice1, string indice2 ) {
+  string varTemp1, varTemp2, varTemp3;
+  
+  varTemp1 = geraTemp ( Tipo( "int" ) );
+  Atributo indiceVetor = Atributo();
+  
   if ( t.nome == "string" ) {
     switch ( t.nDim ) {
       case 1:
         //if ( indice1 < t.d1 )
-          return indice1 + " * " + toStr( MAX_STR );
+          indiceVetor.c = "  " + varTemp1 + " = " + indice1 + " * " + toStr( MAX_STR ) + ";\n";
+          indiceVetor.v = varTemp1;
+          
+          return indiceVetor;
         //else break;
       case 2:
         //if ( indice1 < t.d1 && indice2 < t.d2 )
-          return "( " + indice1 + " * " + toStr( t.d2 ) + " + " + indice2 + " ) * " + toStr( MAX_STR );
+          varTemp2 = geraTemp ( Tipo( "int" ) );
+          varTemp3 = geraTemp ( Tipo( "int" ) );
+          
+          indiceVetor.c = "  " + varTemp1 + " = " + indice1 + " * " + toStr( t.d2 ) + ";\n"
+                          "  " + varTemp2 + " = " + varTemp1 + " + " + indice2 + ";\n"
+                          "  " + varTemp3 + " = " + varTemp2 + " * " + toStr( MAX_STR ) + ";\n";
+          indiceVetor.v = varTemp3;
+          
+          return indiceVetor;
+          
+          //return "( " + indice1 + " * " + toStr( t.d2 ) + " + " + indice2 + " ) * " + toStr( MAX_STR );
         //else break;
     }
   }else {
     switch ( t.nDim ) {
       case 1:
         //if ( indice1 < t.d1 )
-          return indice1;
+          indiceVetor.c = "  " + varTemp1 + " = " + indice1 + ";\n";
+          indiceVetor.v = varTemp1;
+          
+          return indiceVetor;
         //else break;
       case 2:
         //if ( indice1 < t.d1 && indice2 < t.d2 )
-          return indice1 + " * " + toStr ( t.d2 ) + " + " + indice2;
+          varTemp2 = geraTemp ( Tipo( "int" ) );
+          varTemp3 = geraTemp ( Tipo( "int" ) );
+          
+          indiceVetor.c = "  " + varTemp1 + " = " + indice1 + " * " + toStr( t.d2 ) + ";\n"
+                          "  " + varTemp2 + " = " + varTemp1 + " + " + indice2 + ";\n";
+          indiceVetor.v = varTemp2;
+          
+          return indiceVetor;
+          //return indice1 + " * " + toStr( t.d2 ) + " + " + indice2;
         //else break;
     }
   }

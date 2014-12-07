@@ -28,6 +28,8 @@
 *.app
 trabalho
 saida
+saida_matrizes
+saida_mdc
 
 # Backup files
 *~

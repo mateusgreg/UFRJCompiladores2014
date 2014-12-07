@@ -57,4 +57,16 @@ int main() {
   }
   
   printf(s + "\n");
+  
+  //printf("\n\nEntre com um numero inteiro: ");
+  //scanf(b[1]);
+  //printf("Você digitou: " + b[1] + "\n");
+  
+  //printf("\nEntre com um numero real (float): ");
+  //scanf(f[7][1]);
+  //printf("Você digitou: " + f[7][1] + "\n");
+  
+  //printf("\nAgora entre com uma palavra: ");
+  //scanf(s);
+  //printf("Você digitou: " + s + "\n");
 }
