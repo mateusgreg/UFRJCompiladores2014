@@ -200,10 +200,14 @@ VARIAVEIS : VARIAVEIS VARIAVEL ';'
           ;
 
 VARIAVEL : VARIAVEL ',' TK_ID ARRAY
-           { insereVariavelTS( ts, $3.v, $1.t ); 
+           { $3.t.nDim = $4.t.nDim;
+             $3.t.d1   = $4.t.d1;
+             $3.t.d2   = $4.t.d2;
+           
+             insereVariavelTS( ts, $3.v, $1.t ); 
              geraDeclaracaoVariavel( &$$, $1, $3 ); }
+             
          | TIPO TK_ID ARRAY
-       
            { $1.t.nDim = $3.t.nDim;
              $1.t.d1   = $3.t.d1;
              $1.t.d2   = $3.t.d2;
