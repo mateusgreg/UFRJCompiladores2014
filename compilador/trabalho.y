@@ -75,6 +75,16 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr,
 void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, 
                                         const Atributo& cmdsThen );
 
+void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch);
+
+void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
+                                   const Atributo& cmdsCase, 
+                                   const Atributo& valorExprSwitch, 
+                                   const Atributo& cmdBreak );
+
+void geraCodigoDefault( Atributo* SS, const Atributo& cmds, 
+                                      const Atributo& cmdCaseWithBreakGoto );
+
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
                                   const Atributo& passo, 
@@ -104,7 +114,7 @@ int yyparse();
 void yyerror(const char *);
 %}
 
-%token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT
+%token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK
 %token TK_INTERVAL TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT
 %token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
 %token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
@@ -293,12 +303,24 @@ CMD_DO_WHILE : TK_DO BLOCO_COMANDO TK_WHILE '(' OPERACAO ')'
 	       { geraCodigoDoWhile( &$$, $2, $5 ); }
              ;
 
-CMD_SWITCH : TK_SWITCH '(' INDICE ')' '{' CMD_CASE TK_DEFAULT ':' COMANDOS '}' 
+CMD_SWITCH : TK_SWITCH SW '}'
+	     { $$ = $2; }
            ;
 
-CMD_CASE : TK_CASE INDICE ':' COMANDOS CMD_CASE 
-         |
-         ;
+SW : CMD_CASE TK_DEFAULT ':' COMANDOS 
+     { geraCodigoDefault( &$$, $4, $1 ); }
+   ;
+
+CMD_CASE : '(' INDICE ')' '{' 
+	   { geraCodigoSwitchCase(&$$, $2); }
+         | CMD_CASE TK_CASE INDICE ':' COMANDOS CMD_BREAK
+	   { geraCodigoCase(&$$, $3, $5, $1, $6); }
+	 ;
+
+CMD_BREAK : TK_BREAK ';'
+            { $$.v = "BREAK"; }
+          | { $$.v = ""; }
+          ;
 
 CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
              ;
@@ -573,6 +595,33 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cm
           "  " + ifFalse + ":\n" + cmdsElse.c +
           "  " + ifFim + ":\n";
 }
+
+void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch) {
+  *SS = Atributo();
+  SS->c = exprSwitch.c;
+  SS->v = exprSwitch.v;
+  SS->t.nome = geraLabel( "if_fim_switch" );
+}
+
+void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
+                                   const Atributo& cmdsCase, 
+                                   const Atributo& valorExprSwitch, 
+                                   const Atributo& cmdBreak ) {
+  string breakValue = "";
+  if (cmdBreak.v == "BREAK") breakValue = "  goto " + valorExprSwitch.t.nome + ";\n";
+
+  string ifStartCase = geraLabel( "if_start_case" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+  
+  SS->c = "  " + valorNotCond + " = " + indiceCase.v + " == " + valorExprSwitch.v + ";\n"
+	  "  if( " + valorNotCond + " ) goto " + ifStartCase + ";\n" +
+	  valorExprSwitch.c + ifStartCase + ":\n" + cmdsCase.c + breakValue;
+}
+
+void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto ) {
+  SS->c = SS->c + cmds.c + "\n" + cmdCaseWithBreakGoto.t.nome + ":\n";
+}
+
 
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
