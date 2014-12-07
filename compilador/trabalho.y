@@ -200,10 +200,14 @@ VARIAVEIS : VARIAVEIS VARIAVEL ';'
           ;
 
 VARIAVEL : VARIAVEL ',' TK_ID ARRAY
-           { $3.t.nDim = $4.t.nDim;
+           { $1.t.nDim = $4.t.nDim;
+             $1.t.d1   = $4.t.d1;
+             $1.t.d2   = $4.t.d2;
+           
+             $3.t.nDim = $4.t.nDim;
              $3.t.d1   = $4.t.d1;
              $3.t.d2   = $4.t.d2;
-           
+
              insereVariavelTS( ts, $3.v, $1.t ); 
              geraDeclaracaoVariavel( &$$, $1, $3 ); }
              
@@ -711,7 +715,7 @@ string geraCodigoAtribuicaoVetor( const Atributo& lvalue, const Atributo& rvalue
       return "  " + toStr( calculaIndice(lvalue.t, lvalue.v, indice1, indice2) ) + " = " + rvalue.v + ";\n"
 	     "  " + toStr( calculaIndice(lvalue.t, lvalue.v, indice1, indice2) + 1) + " = 0;\n";
     }
-  } else return "  " + lvalue.v + "[ " + toStr( calculaIndice(lvalue.t, lvalue.v, indice1, indice2) ) + "] = " + rvalue.v + ";\n";
+  } else return "  " + lvalue.v + "[" + toStr( calculaIndice(lvalue.t, lvalue.v, indice1, indice2) ) + "] = " + rvalue.v + ";\n";
 }
 
 int calculaIndice ( const Tipo& t, string id, int indice1, int indice2 ) {

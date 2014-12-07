@@ -1,9 +1,7 @@
 int main() {
   
-  int a, i, j;
-  int b[2];
-  float f[10][2];
-  float g;
+  int a, i, j, b[2];
+  float f[10][2], g;
   
   string s;
   string s1[10];

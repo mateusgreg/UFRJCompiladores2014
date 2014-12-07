@@ -14,9 +14,9 @@ int main(){
   int a;
 int i;
 int j;
-  int b[2];
+int b[2];
   float f[20];
-  float g;
+float g;
   char s[256];
   char s1[2560];
   char s2[5376];
@@ -67,7 +67,7 @@ int j;
 
   printf( "%s", "\na = " );
   printf( "%d", a );
-  b[ 1] = 50;
+  b[1] = 50;
 
   a = b[1];
 
@@ -79,7 +79,7 @@ int j;
   printf( "%s", "\nO valor de 'a' é: " );
   printf( "%d", a );
   printf( "%s", "\n" );
-  f[ 15] = 3.5;
+  f[15] = 3.5;
 
   printf( "%s", "\nf = " );
   printf( "%f", f[15] );
