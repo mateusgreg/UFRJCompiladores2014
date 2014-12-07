@@ -78,9 +78,11 @@ void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch);
 
 void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
                                    const Atributo& cmdsCase, 
-                                   const Atributo& valorExprSwitch );
+                                   const Atributo& valorExprSwitch, 
+                                   const Atributo& cmdBreak );
 
-void geraCodigoDefault( Atributo* SS, const Atributo& cmds );
+void geraCodigoDefault( Atributo* SS, const Atributo& cmds, 
+                                      const Atributo& cmdCaseWithBreakGoto );
 
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
@@ -296,17 +298,21 @@ CMD_SWITCH : TK_SWITCH SW '}'
 	     { $$ = $2; }
            ;
 
-SW : CMD_CASE TK_DEFAULT ':' COMANDOS
-     { geraCodigoDefault( &$$, $4 ); }
+SW : CMD_CASE TK_DEFAULT ':' COMANDOS 
+     { geraCodigoDefault( &$$, $4, $1 ); }
    ;
 
 CMD_CASE : '(' INDICE ')' '{' 
-	   { $$.v = $2.v;
-             geraCodigoSwitchCase(&$$, $2); }
-         | CMD_CASE TK_CASE INDICE ':' COMANDOS
-	   { geraCodigoCase(&$$, $3, $5, $1); }
+	   { geraCodigoSwitchCase(&$$, $2); }
+         | CMD_CASE TK_CASE INDICE ':' COMANDOS CMD_BREAK
+	   { geraCodigoCase(&$$, $3, $5, $1, $6); }
 	 ;
-         
+
+CMD_BREAK : TK_BREAK ';'
+            { $$.v = "BREAK"; }
+          | { $$.v = ""; }
+          ;
+
 CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
              ;
 
@@ -549,21 +555,26 @@ void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch) {
   *SS = Atributo();
   SS->c = exprSwitch.c;
   SS->v = exprSwitch.v;
+  SS->t.nome = geraLabel( "if_fim_switch" );
 }
 
 void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
                                    const Atributo& cmdsCase, 
-                                   const Atributo& valorExprSwitch ) {
+                                   const Atributo& valorExprSwitch, 
+                                   const Atributo& cmdBreak ) {
+  string breakValue = "";
+  if (cmdBreak.v == "BREAK") breakValue = "  goto " + valorExprSwitch.t.nome + ";\n";
+
   string ifStartCase = geraLabel( "if_start_case" );
   string valorNotCond = geraTemp( Tipo( "bool" ) );
   
   SS->c = "  " + valorNotCond + " = " + indiceCase.v + " == " + valorExprSwitch.v + ";\n"
 	  "  if( " + valorNotCond + " ) goto " + ifStartCase + ";\n" +
-	  valorExprSwitch.c + ifStartCase + ":\n" + cmdsCase.c;
+	  valorExprSwitch.c + ifStartCase + ":\n" + cmdsCase.c + breakValue;
 }
 
-void geraCodigoDefault( Atributo* SS, const Atributo& cmds ) {
-  SS->c = SS->c + cmds.c + "\n";
+void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto ) {
+  SS->c = SS->c + cmds.c + "\n" + cmdCaseWithBreakGoto.t.nome + ":\n";
 }
 
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 

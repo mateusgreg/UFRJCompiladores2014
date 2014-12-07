@@ -51,8 +51,8 @@ int main() {
   printf("\n\n");
   
   switch(1) {
-    case 1: printf("Case 1\n");
-    case 2: printf("Case 2\n");
+    case 1: printf("Case 1\n"); 
+    case 2: printf("Case 2\n"); 
     default: printf("Default\n");
   }
   
