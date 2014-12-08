@@ -6,7 +6,7 @@ X 1) Tipos: int, char, boolean, float, double, string
 X 2) Estruturas de controle: if/else, for, while, do-while, switch.
 X 3) Array bi-dimensional
 X 4) blocos
-  5) Variáveis locais e globais, com escopo.
+X 5) Variáveis locais e globais, com escopo.
 X 6) Expressões com precedência e associatividade de operadores
 X 7) funções com parametros por valor e referência
 X 8) concatenação de strings com operador "+"
@@ -25,15 +25,15 @@ Acima de 5 pontos:
 
 Pipes:
 Até 9 pontos:
-12) intervalo: [ 0 .. 10 ] 
-13) filter[ x % 2 == 0 ]
-14) forEach[ print( x ) ]
-15) firstN[ 10 ]
-16) lastN[ 10 ]
-17) sort[ x ]
+X 12) intervalo: [ 0 .. 10 ] 
+  13) filter[ x % 2 == 0 ]
+  14) forEach[ print( x ) ]
+  15) firstN[ 10 ]
+  16) lastN[ 10 ]
+  17) sort[ x ]
 
 Para ter 10:
-18) split[ x > 6 ]( a, b )
+  18) split[ x > 6 ]( a, b )
 
 ----------------------------------------------------------------
 Exemplos de programas:

@@ -21,6 +21,7 @@ int main(){
   double x_double;
   float x_float;
 
+  int temp_bool_1;
   int temp_int_1;
   int temp_int_2;
   int temp_int_3;
@@ -196,6 +197,16 @@ int main(){
   printf( "%d", z );
   printf( "%s", "\n" );
   james(z);
+  z=1;
+  L_intrv_cond_1:
+  temp_bool_1 = z>10;
+  if( temp_bool_1 ) goto L_intrv_fim_1;
+  printf( "%d", z );
+  printf( "%s", "\n" );
+  z++;
+  goto L_intrv_cond_1;
+  L_intrv_fim_1:
+
 
   return 0;
 }

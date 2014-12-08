@@ -74,34 +74,20 @@ void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalu
 Atributo geraCodigoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
 void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
-void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, 
-                                        const Atributo& cmdsThen,
-                                        const Atributo& cmdsElse );
 
-void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, 
-                                        const Atributo& cmdsThen );
-
+void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen, const Atributo& cmdsElse );
+void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen );
 void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch);
-
-void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
-                                   const Atributo& cmdsCase, 
-                                   const Atributo& valorExprSwitch, 
-                                   const Atributo& cmdBreak );
-
-void geraCodigoDefault( Atributo* SS, const Atributo& cmds, 
-                                      const Atributo& cmdCaseWithBreakGoto );
-
-void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
-                                  const Atributo& condicao, 
-                                  const Atributo& passo, 
-                                  const Atributo& cmds );
-                                  
-void geraCodigoWhile( Atributo* SS, const Atributo& condicao, 
-                                    const Atributo& cmds );
-
-void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, 
-                                      const Atributo& condicao );
-                                  
+void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, const Atributo& cmdsCase, 
+                                   const Atributo& valorExprSwitch, const Atributo& cmdBreak );
+void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto );
+void geraCodigoFor( Atributo* SS, const Atributo& inicial, const Atributo& condicao, 
+                                  const Atributo& passo, const Atributo& cmds );
+void geraCodigoWhile( Atributo* SS, const Atributo& condicao, const Atributo& cmds );
+void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, const Atributo& condicao );
+void geraCodigoInterval( Atributo* SS, const Atributo& variavel, const Atributo& valinicial, 
+                                       const Atributo& valfinal, const Atributo& cmds );
+                                       
 void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
@@ -349,7 +335,8 @@ CMD_BREAK : TK_BREAK ';'
           | { $$.v = ""; }
           ;
 
-CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
+CMD_INTERVAL : TK_INTERVAL '(' TK_ID '=' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
+               { geraCodigoInterval( &$$, $3, $5, $7, $9); }
              ;
 
 //#Dentro de OPERACAO haverá acesso à variável INDEX que diz a posição em que o filtro se encontra
@@ -676,14 +663,12 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cm
           "  " + ifFalse + ":\n" + cmdsElse.c +
           "  " + ifFim + ":\n";
 }
-
 void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch) {
   *SS = Atributo();
   SS->c = exprSwitch.c;
   SS->v = exprSwitch.v;
   SS->t.nome = geraLabel( "if_fim_switch" );
 }
-
 void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
                                    const Atributo& cmdsCase, 
                                    const Atributo& valorExprSwitch, 
@@ -698,12 +683,9 @@ void geraCodigoCase( Atributo* SS, const Atributo& indiceCase,
 	  "  if( " + valorNotCond + " ) goto " + ifStartCase + ";\n" +
 	  valorExprSwitch.c + "  " + ifStartCase + ":\n" + cmdsCase.c + breakValue;
 }
-
 void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto ) {
   SS->c = SS->c + cmds.c + "\n  " + cmdCaseWithBreakGoto.t.nome + ":\n";
 }
-
-
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
                                   const Atributo& passo, 
@@ -724,7 +706,6 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial,
           cmds.c + passo.c + "  goto " + forCond + ";\n  " + 
           forFim + ":\n";
 }
-
 void geraCodigoWhile( Atributo* SS, const Atributo& condicao, 
                                     const Atributo& cmds ) {
   string whileCond = geraLabel( "while_cond" ),
@@ -741,7 +722,6 @@ void geraCodigoWhile( Atributo* SS, const Atributo& condicao,
           cmds.c + "  goto " + whileCond + ";\n  " + 
           whileFim + ":\n";
 }
-
 void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, 
                                       const Atributo& condicao ) {
   string whileInicio = geraLabel( "do_while_inicio" );
@@ -752,6 +732,35 @@ void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds,
   
   SS->c = "  " + whileInicio + ":\n" + cmds.c + condicao.c +
           "  if( " + condicao.v + " ) goto " + whileInicio + ";\n";
+}
+void geraCodigoInterval( Atributo* SS, const Atributo& variavel, const Atributo& valinicial, 
+                                       const Atributo& valfinal, const Atributo& cmds ) {
+  string intvrCond = geraLabel( "intrv_cond" ),
+         intvrFim = geraLabel( "intrv_fim" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+         
+  *SS = Atributo();
+  string tokenMaiorMenor;
+  string tokenBiggerSmaller;
+  if (valinicial.v < valfinal.v){
+     tokenBiggerSmaller = "++";
+     tokenMaiorMenor = ">";
+  }
+  else{
+     tokenBiggerSmaller = "--";
+     tokenMaiorMenor = "<";
+  }
+  
+  // Funciona apenas para filtro, sem pipe que precisa de buffer 
+  // (sort, por exemplo, não funciona)
+  SS->c = variavel.c + valinicial.c + valfinal.c + 
+          "  " + variavel.v + "=" + valinicial.v + ";\n" + 
+          "  " + intvrCond + ":\n" + 
+          "  " + valorNotCond + " = " + variavel.v + tokenMaiorMenor + valfinal.v + ";\n" +
+          "  if( " + valorNotCond + " ) goto " + intvrFim + ";\n" +
+          cmds.c + "  " + variavel.v + tokenBiggerSmaller + ";\n" +
+          "  goto " + intvrCond + ";\n  " + 
+          intvrFim + ":\n";
 }
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {

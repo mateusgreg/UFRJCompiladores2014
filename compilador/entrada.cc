@@ -70,4 +70,8 @@ int main() {
   printf(james(&a));
   printf("\n" + z + "\n");
   james(&z);
+  
+  interval (z = 1..10){
+    printf(z + "\n");
+  }
 }
