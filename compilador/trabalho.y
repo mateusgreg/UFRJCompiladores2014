@@ -16,11 +16,12 @@ const int MAX_STR = 256;
 
 struct Tipo {
   string nome;
+  string argumentos;
   int nDim;
   int d1;
   int d2;
   
-  Tipo() { nome = ""; nDim = 0; d1 = 0; d2 = 0; }
+  Tipo() { nome = ""; argumentos = ""; nDim = 0; d1 = 0; d2 = 0; }
   Tipo( string nome ) {
     this->nome = nome;
     nDim = 0; 
@@ -60,8 +61,8 @@ string geraDeclaracaoVarPipe();
 string obterCharDeDeclaracaoParaTipo(string tipo);
 void insereVariavelTS( TS&, string nomeVar, Tipo tipo );
 bool buscaVariavelTS( TS&, string nomeVar, Tipo* tipo );
-void insereFuncaoTF( TF&, string nomeVar, Tipo tipo );
-bool buscaFuncaoTF( TF&, string nomeVar, Tipo* tipo );
+void insereFuncaoTF( TF&, string nomeVar, Tipo tipo, string args );
+bool buscaFuncaoTF( TF&, string nomeVar, Tipo* tipo, string args );
 void erro( string msg );
 int toInt( string n );
 string toStr( int n );
@@ -72,7 +73,6 @@ void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalu
 Atributo geraCodigoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
 void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
-void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds );
 void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, 
                                         const Atributo& cmdsThen,
                                         const Atributo& cmdsElse );
@@ -195,7 +195,6 @@ BLOCO_COMANDO : '{' VARIAVEIS COMANDOS '}'
 
 ARGUMENTOS : ARGUMENTO
              { $$ = $1; }
-//           | MULTI_ARGUMENTOS
            | { $$ = Atributo(); }
            ;
 
@@ -203,12 +202,25 @@ ARGUMENTOS : ARGUMENTO
 //                 | ARGUMENTO
 //                 ;
 
-ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO 
-          | TIPO TK_ID ARRAY
+ARGUMENTO : FUNCAO_TIPO TK_ID ARRAY ',' ARGUMENTO
             { insereVariavelTS( ts, $2.v, $1.t );
-              $$.c = $1.t.nome + " " + $2.v;
+              $$.c = $1.c + " " + $2.v + ", " + $5.c;
+              $$.v = $$.v + $1.c + "+";
+              $$.t.nDim++; } 
+          | FUNCAO_TIPO TK_ID ARRAY
+            { insereVariavelTS( ts, $2.v, $1.t );
+              $$.c = $1.c + " " + $2.v;
+              $$.v = $$.v + $1.c;
               $$.t.nDim++; } 
           ;
+
+FUNCAO_TIPO : TIPO
+              { $$ = $1; 
+                $$.c = $1.t.nome; }
+            | TIPO '&'
+              { $$ = $1; 
+                $$.c = $1.t.nome + "&"; }
+            ;
 
 TIPO : TK_INT
      | TK_CHAR
@@ -220,7 +232,7 @@ TIPO : TK_INT
 
 VARIAVEIS : VARIAVEIS VARIAVEL ';' 
             { $$ = Atributo(); 
-              $$.c = $1.c + "  " + $2.c;}
+              $$.c = $1.c + $2.c;}
           | { $$ = Atributo(); }
           ;
 
@@ -403,13 +415,13 @@ CMD_RETURN : TK_RETURN VALOR
            ;
 
 FUN_PROC : TK_ID '(' ')'
-           { if( buscaFuncaoTF( tf, $1.v, &$$.t ) ){ 
+           { if( buscaFuncaoTF( tf, $1.v, &$$.t, "" ) ){ 
                 $$.v = "  " + $1.v + "()"; 
              }else
                  erro( "Variavel nao declarada: " + $1.v );
            }
          | TK_ID '(' PARAMETROS ')'
-           { if( buscaFuncaoTF( tf, $1.v, &$$.t ) ){ 
+           { if( buscaFuncaoTF( tf, $1.v, &$$.t, $3.v ) ){ 
                 $$.v = "  " + $1.v + "(" + $3.c + ")"; 
              }else
                  erro( "Variavel nao declarada: " + $1.v );
@@ -499,11 +511,21 @@ VALOR : CONST_INT
       | FUN_MERGE
       ;
 
-PARAMETROS : VALOR ',' PARAMETROS
-             { $$.c = $1.v + ", " + $3.c; }
-           | VALOR
-             { $$.c = $1.v; }
+PARAMETROS : FUNCAO_VALOR ',' PARAMETROS
+             { $$.c = $1.v + ", " + $3.c;
+               $$.v = $1.c + "+" + $2.v; }
+           | FUNCAO_VALOR
+             { $$.c = $1.v;
+               $$.v = $1.c; }
            ;
+
+FUNCAO_VALOR : VALOR
+               { $$ = $1; 
+                 $$.c = $1.t.nome; }
+             | '&' VALOR 
+               { $$ = $2; 
+                 $$.c = $2.t.nome + "&"; }
+             ;
 
 //#TK_ID deve ser apenas do tipo TK_INT
 INDICE : CONST_INT
@@ -619,19 +641,21 @@ bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
     return false;
 }
 
-void insereFuncaoTF( TF& tf, string nomeVar, Tipo tipo ) {
-  if( !buscaFuncaoTF( tf, nomeVar, &tipo ) )
+void insereFuncaoTF( TF& tf, string nomeVar, Tipo tipo, string args ) {
+  tipo.argumentos = args;
+  if( !buscaFuncaoTF( tf, nomeVar, &tipo, args ) )
     tf[nomeVar] = tipo;
   else  
     erro( "Variavel já definida: " + nomeVar );
 }
-bool buscaFuncaoTF( TF& tf, string nomeVar, Tipo* tipo ) {
+bool buscaFuncaoTF( TF& tf, string nomeVar, Tipo* tipo, string args ) {
   if( tf.find( nomeVar ) != tf.end() ) {
-    *tipo = tf[ nomeVar ];
-    return true;
+    if (tf[ nomeVar ].argumentos == args) {
+      *tipo = tf[ nomeVar ];
+      return true;
+    } else erro ("Número de argumentos na função " + nomeVar + " está incorreto. Devia ser " + tf[ nomeVar ].argumentos + " mas é " + args + ".");
   }
-  else
-    return false;
+  return false;
 }
 
 void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen, const Atributo& cmdsElse ) {
@@ -668,11 +692,11 @@ void geraCodigoCase( Atributo* SS, const Atributo& indiceCase,
   
   SS->c = "  " + valorNotCond + " = " + indiceCase.v + " == " + valorExprSwitch.v + ";\n"
 	  "  if( " + valorNotCond + " ) goto " + ifStartCase + ";\n" +
-	  valorExprSwitch.c + ifStartCase + ":\n" + cmdsCase.c + breakValue;
+	  valorExprSwitch.c + "  " + ifStartCase + ":\n" + cmdsCase.c + breakValue;
 }
 
 void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto ) {
-  SS->c = SS->c + cmds.c + "\n" + cmdCaseWithBreakGoto.t.nome + ":\n";
+  SS->c = SS->c + cmds.c + "\n  " + cmdCaseWithBreakGoto.t.nome + ":\n";
 }
 
 
@@ -690,12 +714,10 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial,
   
   // Funciona apenas para filtro, sem pipe que precisa de buffer 
   // (sort, por exemplo, não funciona)
-  SS->c = inicial.c + forCond + ":\n" + condicao.c +
+  SS->c = inicial.c + "  " + forCond + ":\n" + condicao.c +
           "  " + valorNotCond + " = !" + condicao.v + ";\n" +
           "  if( " + valorNotCond + " ) goto " + forFim + ";\n" +
-          cmds.c +
-          passo.c +
-          "  goto " + forCond + ";\n" + 
+          cmds.c + passo.c + "  goto " + forCond + ";\n  " + 
           forFim + ":\n";
 }
 
@@ -709,11 +731,10 @@ void geraCodigoWhile( Atributo* SS, const Atributo& condicao,
   if( condicao.t.nome != "bool" )
     erro( "A expressão de teste deve ser booleana: " + condicao.t.nome ); 
   
-  SS->c = whileCond + ":\n" + condicao.c +
+  SS->c = "  " + whileCond + ":\n" + condicao.c +
           "  " + valorNotCond + " = !" + condicao.v + ";\n" +
           "  if( " + valorNotCond + " ) goto " + whileFim + ";\n" +
-          cmds.c +
-          "  goto " + whileCond + ";\n" + 
+          cmds.c + "  goto " + whileCond + ";\n  " + 
           whileFim + ":\n";
 }
 
@@ -725,7 +746,7 @@ void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds,
   if( condicao.t.nome != "bool" )
     erro( "A expressão de teste deve ser booleana: " + condicao.t.nome ); 
   
-  SS->c = whileInicio + ":\n" + cmds.c + condicao.c +
+  SS->c = "  " + whileInicio + ":\n" + cmds.c + condicao.c +
           "  if( " + condicao.v + " ) goto " + whileInicio + ";\n";
 }
 
@@ -739,27 +760,27 @@ void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo&
   
   if ( tipo.t.nome == "string" ) {
     switch( id.t.nDim ) {
-      case 0: SS->c = tipo.c + tipoNome + " " + id.v + "["+ toStr( MAX_STR ) +"]"; break;
-      case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * MAX_STR ) + "]"; break;
-      case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 * MAX_STR ) + "]";
+      case 0: SS->c = tipoNome + " " + id.v + "["+ toStr( MAX_STR ) +"]"; break;
+      case 1: SS->c = tipoNome + " " + id.v + "[" + toStr( id.t.d1 * MAX_STR ) + "]"; break;
+      case 2: SS->c = tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 * MAX_STR ) + "]";
     }
   } else {
     switch( id.t.nDim ) {
-      case 0: SS->c = tipo.c + tipoNome + " " + id.v; break;
-      case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 ) + "]"; break;
-      case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 ) + "]";
+      case 0: SS->c = tipoNome + " " + id.v; break;
+      case 1: SS->c = tipoNome + " " + id.v + "[" + toStr( id.t.d1 ) + "]"; break;
+      case 2: SS->c = tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 ) + "]";
     }
   }
   
-  SS->c = SS->c + ";\n";
+  SS->c = tipo.c + "  " + SS->c + ";\n";
 }
 void geraDeclaracaoFuncao( Atributo* SS, const Atributo& tipo, const Atributo& id, const Atributo& argsFunc, const Atributo& cmdsFunc ) {
   if (cmdsFunc.c == ";") {
-     if( buscaFuncaoTF( tf, id.v, &SS->t) ) return;
-     else insereFuncaoTF( tf, id.v, tipo.t );
+     if( buscaFuncaoTF( tf, id.v, &SS->t, argsFunc.v) ) return;
+     else insereFuncaoTF( tf, id.v, tipo.t, argsFunc.v );
   } else {
-     if( buscaFuncaoTF( tf, id.v, &SS->t) ) SS->v = id.v;
-     else insereFuncaoTF( tf, id.v, tipo.t ); 
+     if( buscaFuncaoTF( tf, id.v, &SS->t, argsFunc.v) ) SS->v = id.v;
+     else insereFuncaoTF( tf, id.v, tipo.t, argsFunc.v ); 
   }
 
   SS->t = tipo.t;
@@ -774,17 +795,6 @@ void geraDeclaracaoFuncao( Atributo* SS, const Atributo& tipo, const Atributo& i
   else SS->c = tipo.c + tipoNome + " " + id.v;
   
   SS->c = SS->c + "(" + argsFunc.c + ")" + cmdsFunc.c + "\n";
-}
-void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
-  *SS = Atributo();
-  SS->c = "\nint main() {\n" +
-           geraDeclaracaoVarPipe() + 
-           "\n" + 
-           geraDeclaracaoTemporarias() + 
-           "\n" +
-           cmds.c + 
-           "  return 0;\n" 
-           "}\n";
 }
 
 void geraCodigoScanf( Atributo* SS, const Atributo& id, string indice1, string indice2 ) {

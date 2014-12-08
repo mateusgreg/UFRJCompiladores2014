@@ -1,4 +1,4 @@
-int james(int x){
+int james(int& x){
   printf("James\n");
   return x;
 }
@@ -66,7 +66,7 @@ int main() {
   scanf(s);
   printf("Você digitou: " + s + "\n");
 
-  printf(james(a));
+  printf(james(&a));
   printf("\n" + z + "\n");
-  james(z);
+  james(&z);
 }

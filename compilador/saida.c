@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int james(int x){
+int james(int& x){
   printf( "%s", "James\n" );
   return x;
 }
@@ -55,11 +55,11 @@ int main(){
   char temp_string_2[256];
 
   int a;
-int i;
-int j;
-int b[2];
+  int i;
+  int j;
+  int b[2];
   float f[20];
-float g;
+  float g;
   int z;
   char s[256];
   char s1[2560];
