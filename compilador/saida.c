@@ -4,6 +4,7 @@
 
 int james(int x){
   printf( "%s", "James\n" );
+  return x;
 }
 
 int main(){
@@ -181,6 +182,7 @@ float g;
   printf( "%s", "Você digitou: " );
   printf( "%s", s );
   printf( "%s", "\n" );
+  printf( "%d",   james(a) );
   printf( "%s", "\n" );
   printf( "%d", z );
   printf( "%s", "\n" );

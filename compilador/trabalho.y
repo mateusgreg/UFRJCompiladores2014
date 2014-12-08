@@ -277,7 +277,8 @@ COMANDO : CMD_ATRIB ';'
             $$.c += ";"; }
         | FUN_PROC ';'
           { $$ = $1;
-            $$.c += ";"; }
+            $$.c = $$.v + ";";
+            $$.v = ""; }
         | CMD_PRINTF ';'
           { $$ = $1;
             $$.c += ";"; }
@@ -396,20 +397,20 @@ CMD_ATRIB : TK_ID '=' OPERACAO
           ;
 
 CMD_RETURN : TK_RETURN VALOR
+             { $$.c = "  return " + $2.v; }
            | TK_RETURN
+             { $$.c = "  return 0"; }
            ;
 
 FUN_PROC : TK_ID '(' ')'
            { if( buscaFuncaoTF( tf, $1.v, &$$.t ) ){ 
-                $$.v = $1.v;
-                $$.c = "  " + $$.v + "()"; 
+                $$.v = "  " + $1.v + "()"; 
              }else
                  erro( "Variavel nao declarada: " + $1.v );
            }
          | TK_ID '(' PARAMETROS ')'
            { if( buscaFuncaoTF( tf, $1.v, &$$.t ) ){ 
-                $$.v = $1.v;
-                $$.c = "  " + $$.v + "(" + $3.c + ")"; 
+                $$.v = "  " + $1.v + "(" + $3.c + ")"; 
              }else
                  erro( "Variavel nao declarada: " + $1.v );
            }
