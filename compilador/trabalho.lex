@@ -4,15 +4,18 @@ DELIM   [\t ]
 LINHA   [\n]
 MAIN	[Mm][Aa][Ii][Nn]
 
-IF      [Ii][Ff]
-ELSE    [Ee][Ll][Ss][Ee]
-FOR     [Ff][Oo][Rr]
-WHILE   [Ww][Hh][Ii][Ll][Ee]
-DO      [Dd][Oo]
-SWITCH  [Ss][Ww][Ii][Tt][Cc][Hh]
-CASE    [Cc][Aa][Ss][Ee]
-DEFAULT [Dd][Ee][Ff][Aa][Uu][Ll][Tt]
-BREAK   [Bb][Rr][Ee][Aa][Kk]
+IF       [Ii][Ff]
+ELSE     [Ee][Ll][Ss][Ee]
+FOR      [Ff][Oo][Rr]
+WHILE    [Ww][Hh][Ii][Ll][Ee]
+DO       [Dd][Oo]
+SWITCH   [Ss][Ww][Ii][Tt][Cc][Hh]
+CASE     [Cc][Aa][Ss][Ee]
+DEFAULT  [Dd][Ee][Ff][Aa][Uu][Ll][Tt]
+BREAK    [Bb][Rr][Ee][Aa][Kk]
+INTERVAL [Ii][Nn][Tt][Ee][Rr][Vv][Aa][Ll]
+FOREACH  [Ff][Oo][Rr][Ee][Aa][Cc][Hh]
+IN       [Ii][Nn]
 
 INT     {NUMERO}+
 DOUBLE  {NUMERO}+("."{NUMERO}+)?
@@ -43,9 +46,10 @@ COMMENT "//".*
 {CASE}     { yylval = Atributo( yytext ); return TK_CASE; }
 {DEFAULT}  { yylval = Atributo( yytext ); return TK_DEFAULT; }
 {BREAK}    { yylval = Atributo( yytext ); return TK_BREAK; }
-"interval" { yylval = Atributo( yytext ); return TK_INTERVAL; }
+{INTERVAL} { yylval = Atributo( yytext ); return TK_INTERVAL; }
 "filter"   { yylval = Atributo( yytext ); return TK_FILTER; }
-"forEach"  { yylval = Atributo( yytext ); return TK_FOR_EACH; }
+{FOREACH}  { yylval = Atributo( yytext ); return TK_FOR_EACH; }
+{IN}       { yylval = Atributo( yytext ); return TK_IN; }
 "sort"     { yylval = Atributo( yytext ); return TK_SORT; }
 "firstN"   { yylval = Atributo( yytext ); return TK_FIRST_N; }
 "lastN"    { yylval = Atributo( yytext ); return TK_LAST_N; }

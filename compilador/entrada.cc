@@ -9,7 +9,7 @@ int main() {
   int a, i, j, b[2];
   float f[10][2], g;
   
-  int z;
+  int z, x;
   
   string s;
   string s1[10];
@@ -41,6 +41,7 @@ int main() {
   printf("\na = " + a);
   
   b[1] = 50;
+  b[0] = 2;
   a = b[1];
   printf("\na = " + a);
   
@@ -73,5 +74,9 @@ int main() {
   
   interval (z = 1..10){
     printf(z + "\n");
+  }
+  
+  forEach (x in b){
+    printf(x + "\n");
   }
 }

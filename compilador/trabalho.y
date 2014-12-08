@@ -85,9 +85,9 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial, const Atributo& condi
                                   const Atributo& passo, const Atributo& cmds );
 void geraCodigoWhile( Atributo* SS, const Atributo& condicao, const Atributo& cmds );
 void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, const Atributo& condicao );
-void geraCodigoInterval( Atributo* SS, const Atributo& variavel, const Atributo& valinicial, 
-                                       const Atributo& valfinal, const Atributo& cmds );
-                                       
+void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinicial, string valfinal, const Atributo& cmds );
+void geraCodigoForEach( Atributo* SS, Atributo& variavel, Atributo& indice, const Atributo& cmds );
+
 void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
@@ -111,7 +111,7 @@ void yyerror(const char *);
 %}
 
 %token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK
-%token TK_INTERVAL TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT
+%token TK_INTERVAL TK_IN TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT 
 %token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
 %token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
 %token CONST_INT CONST_CHAR CONST_BOOLEAN CONST_FLOAT CONST_DOUBLE CONST_STRING
@@ -336,7 +336,7 @@ CMD_BREAK : TK_BREAK ';'
           ;
 
 CMD_INTERVAL : TK_INTERVAL '(' TK_ID '=' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
-               { geraCodigoInterval( &$$, $3, $5, $7, $9); }
+               { geraCodigoInterval( &$$, $3, $5.v, $7.v, $9); }
              ;
 
 //#Dentro de OPERACAO haverá acesso à variável INDEX que diz a posição em que o filtro se encontra
@@ -344,7 +344,8 @@ CMD_FILTER : TK_FILTER '(' OPERACAO ')' BLOCO_COMANDO
            ;
 
 //#TK_ID deve ser array
-CMD_FOREACH : TK_FOR_EACH '(' TK_ID ')' BLOCO_COMANDO
+CMD_FOREACH : TK_FOR_EACH '(' TK_ID TK_IN TK_ID ')' BLOCO_COMANDO
+              { geraCodigoForEach(&$$, $5, $3, $7); }
             ;
 
 //#TK_ID deve ser array 
@@ -733,16 +734,14 @@ void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds,
   SS->c = "  " + whileInicio + ":\n" + cmds.c + condicao.c +
           "  if( " + condicao.v + " ) goto " + whileInicio + ";\n";
 }
-void geraCodigoInterval( Atributo* SS, const Atributo& variavel, const Atributo& valinicial, 
-                                       const Atributo& valfinal, const Atributo& cmds ) {
+void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinicial, string valfinal, const Atributo& cmds ) {
   string intvrCond = geraLabel( "intrv_cond" ),
          intvrFim = geraLabel( "intrv_fim" );
   string valorNotCond = geraTemp( Tipo( "bool" ) );
          
-  *SS = Atributo();
   string tokenMaiorMenor;
   string tokenBiggerSmaller;
-  if (valinicial.v < valfinal.v){
+  if (valinicial < valfinal){
      tokenBiggerSmaller = "++";
      tokenMaiorMenor = ">";
   }
@@ -751,16 +750,35 @@ void geraCodigoInterval( Atributo* SS, const Atributo& variavel, const Atributo&
      tokenMaiorMenor = "<";
   }
   
-  // Funciona apenas para filtro, sem pipe que precisa de buffer 
-  // (sort, por exemplo, não funciona)
-  SS->c = variavel.c + valinicial.c + valfinal.c + 
-          "  " + variavel.v + "=" + valinicial.v + ";\n" + 
+  SS->c = SS->c + variavel.c + 
+          "  " + variavel.v + "=" + valinicial + ";\n" + 
           "  " + intvrCond + ":\n" + 
-          "  " + valorNotCond + " = " + variavel.v + tokenMaiorMenor + valfinal.v + ";\n" +
+          "  " + valorNotCond + " = " + variavel.v + tokenMaiorMenor + valfinal + ";\n" +
           "  if( " + valorNotCond + " ) goto " + intvrFim + ";\n" +
           cmds.c + "  " + variavel.v + tokenBiggerSmaller + ";\n" +
           "  goto " + intvrCond + ";\n  " + 
           intvrFim + ":\n";
+}
+void geraCodigoForEach( Atributo* SS, Atributo& variavel, Atributo& indice, const Atributo& cmds ) {
+  string feachCond = geraLabel( "feach_cond" ),
+         feachFim = geraLabel( "feach_fim" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+         
+  *SS = Atributo();
+  if( buscaVariavelTS( ts, indice.v, &indice.t ) ){
+    if( buscaVariavelTS( ts, variavel.v, &variavel.t ) ){
+      SS->c = SS->c + variavel.c + 
+          "  x_int = 0;\n" + 
+          "  " + indice.v + "= " + variavel.v + "[0];\n" + 
+          "  " + feachCond + ":\n" + 
+          "  " + valorNotCond + " = x_int >" + toStr(variavel.t.d1-1) + ";\n" +
+          "  if( " + valorNotCond + " ) goto " + feachFim + ";\n" + cmds.c + 
+          "  x_int++;\n" + 
+          "  " + indice.v + "= " + variavel.v + "[x_int];\n" + 
+          "  goto " + feachCond + ";\n  " + 
+          feachFim + ":\n";
+    }
+  }
 }
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {
