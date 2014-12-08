@@ -45,6 +45,9 @@ struct Atributo {
 typedef map< string, Tipo > TS;
 TS ts; // Tabela de simbolos
 
+typedef map< string, Tipo > TF;
+TF tf; // Tabela de funções
+
 string pipeAtivo; // Tipo do pipe ativo
 string passoPipeAtivo; // Label 'fim' do pipe ativo
 
@@ -57,6 +60,8 @@ string geraDeclaracaoVarPipe();
 string obterCharDeDeclaracaoParaTipo(string tipo);
 void insereVariavelTS( TS&, string nomeVar, Tipo tipo );
 bool buscaVariavelTS( TS&, string nomeVar, Tipo* tipo );
+void insereFuncaoTF( TF&, string nomeVar, Tipo tipo );
+bool buscaFuncaoTF( TF&, string nomeVar, Tipo* tipo );
 void erro( string msg );
 int toInt( string n );
 string toStr( int n );
@@ -100,6 +105,10 @@ void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
                                            const Atributo& id );
+void geraDeclaracaoFuncao( Atributo* SS, const Atributo& tipo,
+                                         const Atributo& id,
+                                         const Atributo& argsFunc,
+                                         const Atributo& cmdsFunc );
 
 //NÃO UTILIZE as funções abaixo isoladamente!! AO INVÉS DISSO, CHAME A FUNÇÃO void geraCodigoAtribuicao();
 string geraCodigoAtribuicaoVariavelSimples( const Atributo& lvalue, const Atributo& rvalue );
@@ -132,7 +141,7 @@ void yyerror(const char *);
 S : VARIAVEIS LISTA_FUNCOES
     { cout << "#include <stdio.h>\n"
               "#include <stdlib.h>\n"
-              "#include <string.h>\n"
+              "#include <string.h>\n\n"
             << $1.c << $2.c << endl; }
   ;
 
@@ -144,7 +153,9 @@ LISTA_FUNCOES : FUNCAO LISTA_FUNCOES
               ;
 
 FUNCAO : TIPO TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
+         { geraDeclaracaoFuncao( &$$, $1, $2, $4, $6 ); }
        | TK_VOID TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
+         { geraDeclaracaoFuncao( &$$, $1, $2, $4, $6 ); }
        ;
 
 MAIN : TK_INT TK_MAIN '(' ')' MAIN_BLOCO 
@@ -170,7 +181,8 @@ CORPO_DE_FUNCAO : BLOCO
 
 BLOCO : '{' VARIAVEIS COMANDOS '}'
         { $$ = Atributo();
-          $$.c = "{" + $2.c + $3.c + "}"; }
+          $$.c = "{\n" + $2.c + $3.c + "}";
+          $$.v = $3.v; }
       ; 
 
 BLOCO_COMANDO : '{' VARIAVEIS COMANDOS '}'
@@ -190,9 +202,12 @@ ARGUMENTOS : ARGUMENTO
 //MULTI_ARGUMENTOS : ARGUMENTO ',' MULTI_ARGUMENTOS
 //                 | ARGUMENTO
 //                 ;
-           
+
 ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO 
-          | TIPO TK_ID ARRAY 
+          | TIPO TK_ID ARRAY
+            { insereVariavelTS( ts, $2.v, $1.t );
+              $$.c = $1.t.nome + " " + $2.v;
+              $$.t.nDim++; } 
           ;
 
 TIPO : TK_INT
@@ -249,7 +264,7 @@ ARRAY : '[' CONST_INT ']' '[' CONST_INT ']'
 
 COMANDOS : COMANDO COMANDOS
            { $$ = Atributo();
-             $$.c = $1.c + '\n' + $2.c;}
+             $$.c = $1.c + '\n' + $2.c; }
          | { $$ = Atributo(); }
          ;
 
@@ -370,6 +385,14 @@ CMD_ATRIB : TK_ID '=' OPERACAO
 	      
 	      geraCodigoAtribuicao( &$$, $1, operacaoMaisMais ); }
           | TK_ID TK_DIMINUI_UM
+	    { Atributo operacaoMenosMenos = Atributo();
+	      string varTemp = geraTemp( Tipo("int") );
+	      
+	      operacaoMenosMenos.t = Tipo( "int" );
+	      operacaoMenosMenos.c = "  " + varTemp + " = " + $1.v + " - 1;\n";
+	      operacaoMenosMenos.v = varTemp;
+	      
+	      geraCodigoAtribuicao( &$$, $1, operacaoMenosMenos ); }
           ;
 
 CMD_RETURN : TK_RETURN VALOR
@@ -377,7 +400,19 @@ CMD_RETURN : TK_RETURN VALOR
            ;
 
 FUN_PROC : TK_ID '(' ')'
+           { if( buscaFuncaoTF( tf, $1.v, &$$.t ) ){ 
+                $$.v = $1.v;
+                $$.c = "  " + $$.v + "()"; 
+             }else
+                 erro( "Variavel nao declarada: " + $1.v );
+           }
          | TK_ID '(' PARAMETROS ')'
+           { if( buscaFuncaoTF( tf, $1.v, &$$.t ) ){ 
+                $$.v = $1.v;
+                $$.c = "  " + $$.v + "(" + $3.c + ")"; 
+             }else
+                 erro( "Variavel nao declarada: " + $1.v );
+           }
          ;
 
 OPERACAO : OPERACAO '+' OPERACAO
@@ -454,8 +489,8 @@ VALOR : CONST_INT
           }else
              erro( "Variavel nao declarada: " + $1.v );
         }
-      | TK_ID '(' PARAMETROS ')'
-      | TK_ID '(' ')'
+      | FUN_PROC
+        { $$ = $1; }
       | FUN_SORT
       | FUN_FIRST_N
       | FUN_LAST_N
@@ -464,7 +499,9 @@ VALOR : CONST_INT
       ;
 
 PARAMETROS : VALOR ',' PARAMETROS
+             { $$.c = $1.v + ", " + $3.c; }
            | VALOR
+             { $$.c = $1.v; }
            ;
 
 //#TK_ID deve ser apenas do tipo TK_INT
@@ -575,6 +612,21 @@ void insereVariavelTS( TS& ts, string nomeVar, Tipo tipo ) {
 bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
   if( ts.find( nomeVar ) != ts.end() ) {
     *tipo = ts[ nomeVar ];
+    return true;
+  }
+  else
+    return false;
+}
+
+void insereFuncaoTF( TF& tf, string nomeVar, Tipo tipo ) {
+  if( !buscaFuncaoTF( tf, nomeVar, &tipo ) )
+    tf[nomeVar] = tipo;
+  else  
+    erro( "Variavel já definida: " + nomeVar );
+}
+bool buscaFuncaoTF( TF& tf, string nomeVar, Tipo* tipo ) {
+  if( tf.find( nomeVar ) != tf.end() ) {
+    *tipo = tf[ nomeVar ];
     return true;
   }
   else
@@ -699,6 +751,28 @@ void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo&
   }
   
   SS->c = SS->c + ";\n";
+}
+void geraDeclaracaoFuncao( Atributo* SS, const Atributo& tipo, const Atributo& id, const Atributo& argsFunc, const Atributo& cmdsFunc ) {
+  if (cmdsFunc.c == ";") {
+     if( buscaFuncaoTF( tf, id.v, &SS->t) ) return;
+     else insereFuncaoTF( tf, id.v, tipo.t );
+  } else {
+     if( buscaFuncaoTF( tf, id.v, &SS->t) ) SS->v = id.v;
+     else insereFuncaoTF( tf, id.v, tipo.t ); 
+  }
+
+  SS->t = tipo.t;
+  SS->t.nDim = argsFunc.t.nDim;
+
+  string tipoNome = tipo.t.nome;
+  if( tipoNome == "bool") tipoNome = "int";
+  if( tipoNome == "string") tipoNome = "char";
+  
+  if ( tipo.t.nome == "string" ) 
+       SS->c = tipo.c + tipoNome + "* " + id.v; 
+  else SS->c = tipo.c + tipoNome + " " + id.v;
+  
+  SS->c = SS->c + "(" + argsFunc.c + ")" + cmdsFunc.c + "\n";
 }
 void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
   *SS = Atributo();
