@@ -43,6 +43,7 @@ struct Atributo {
   }
 };
 
+string blocoAtual = "global"; //Bloco em escrita, usado para escrita e leitura de variáveis
 typedef map< string, Tipo > TS;
 TS ts; // Tabela de simbolos
 
@@ -55,7 +56,7 @@ string passoPipeAtivo; // Label 'fim' do pipe ativo
 Tipo tipoResultado( Tipo a, string operador, Tipo b );
 string geraTemp( Tipo tipo );
 string geraLabel( string cmd );
-string geraDeclaracaoTemporarias();
+string geraDeclaracaoTemporarias(string bloco);
 string geraDeclaracaoVarPipe();
 
 string obterCharDeDeclaracaoParaTipo(string tipo);
@@ -73,34 +74,20 @@ void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalu
 Atributo geraCodigoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
 void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
-void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, 
-                                        const Atributo& cmdsThen,
-                                        const Atributo& cmdsElse );
 
-void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, 
-                                        const Atributo& cmdsThen );
-
+void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen, const Atributo& cmdsElse );
+void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen );
 void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch);
+void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, const Atributo& cmdsCase, 
+                                   const Atributo& valorExprSwitch, const Atributo& cmdBreak );
+void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto );
+void geraCodigoFor( Atributo* SS, const Atributo& inicial, const Atributo& condicao, 
+                                  const Atributo& passo, const Atributo& cmds );
+void geraCodigoWhile( Atributo* SS, const Atributo& condicao, const Atributo& cmds );
+void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, const Atributo& condicao );
+void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinicial, string valfinal, const Atributo& cmds );
+void geraCodigoForEach( Atributo* SS, Atributo& variavel, Atributo& indice, const Atributo& cmds );
 
-void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
-                                   const Atributo& cmdsCase, 
-                                   const Atributo& valorExprSwitch, 
-                                   const Atributo& cmdBreak );
-
-void geraCodigoDefault( Atributo* SS, const Atributo& cmds, 
-                                      const Atributo& cmdCaseWithBreakGoto );
-
-void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
-                                  const Atributo& condicao, 
-                                  const Atributo& passo, 
-                                  const Atributo& cmds );
-                                  
-void geraCodigoWhile( Atributo* SS, const Atributo& condicao, 
-                                    const Atributo& cmds );
-
-void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, 
-                                      const Atributo& condicao );
-                                  
 void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
@@ -124,7 +111,7 @@ void yyerror(const char *);
 %}
 
 %token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK
-%token TK_INTERVAL TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT
+%token TK_INTERVAL TK_IN TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT 
 %token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
 %token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
 %token CONST_INT CONST_CHAR CONST_BOOLEAN CONST_FLOAT CONST_DOUBLE CONST_STRING
@@ -152,38 +139,36 @@ LISTA_FUNCOES : FUNCAO LISTA_FUNCOES
                 { $$ = $1; }
               ;
 
-FUNCAO : TIPO TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
-         { geraDeclaracaoFuncao( &$$, $1, $2, $4, $6 ); }
-       | TK_VOID TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
-         { geraDeclaracaoFuncao( &$$, $1, $2, $4, $6 ); }
+FUNCAO : TIPO TK_ID { blocoAtual = $2.v; } '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
+         { geraDeclaracaoFuncao( &$$, $1, $2, $5, $7 ); }
+       | TK_VOID TK_ID { blocoAtual = $2.v; } '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
+         { geraDeclaracaoFuncao( &$$, $1, $2, $5, $7 ); }
        ;
 
-MAIN : TK_INT TK_MAIN '(' ')' MAIN_BLOCO 
+MAIN : TK_INT TK_MAIN { blocoAtual = "main"; } '(' ')' MAIN_BLOCO 
        { $$ = Atributo();
-         $$.c = "\nint main()" + $5.c + "\n";
+         $$.c = "\nint main()" + $6.c + "\n";
        }
      ; 
 
 MAIN_BLOCO : '{' VARIAVEIS COMANDOS '}'
              { $$ = Atributo();
                $$.c = "{\n" + geraDeclaracaoVarPipe() + "\n" + 
-			      geraDeclaracaoTemporarias() + "\n" +
+			      geraDeclaracaoTemporarias("main") + "\n" +
 			      $2.c + $3.c + 
                       "\n  return 0;\n}"; }
            ; 
      
-CORPO_DE_FUNCAO : BLOCO 
-		  { $$ = $1; }
+CORPO_DE_FUNCAO : '{' VARIAVEIS COMANDOS '}'
+                  { $$ = Atributo();
+                    $$.c = "{\n" + geraDeclaracaoVarPipe() + "\n" + 
+                                   geraDeclaracaoTemporarias(blocoAtual) + "\n"
+                                   + $2.c + $3.c + "}";
+                    $$.v = $3.v; }
                 | ';'
                   { $$ = Atributo();
                     $$.c = ';'; }
                 ;
-
-BLOCO : '{' VARIAVEIS COMANDOS '}'
-        { $$ = Atributo();
-          $$.c = "{\n" + $2.c + $3.c + "}";
-          $$.v = $3.v; }
-      ; 
 
 BLOCO_COMANDO : '{' VARIAVEIS COMANDOS '}'
 		{ $$ = Atributo();
@@ -350,7 +335,8 @@ CMD_BREAK : TK_BREAK ';'
           | { $$.v = ""; }
           ;
 
-CMD_INTERVAL : TK_INTERVAL '(' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
+CMD_INTERVAL : TK_INTERVAL '(' TK_ID '=' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
+               { geraCodigoInterval( &$$, $3, $5.v, $7.v, $9); }
              ;
 
 //#Dentro de OPERACAO haverá acesso à variável INDEX que diz a posição em que o filtro se encontra
@@ -358,7 +344,8 @@ CMD_FILTER : TK_FILTER '(' OPERACAO ')' BLOCO_COMANDO
            ;
 
 //#TK_ID deve ser array
-CMD_FOREACH : TK_FOR_EACH '(' TK_ID ')' BLOCO_COMANDO
+CMD_FOREACH : TK_FOR_EACH '(' TK_ID TK_IN TK_ID ')' BLOCO_COMANDO
+              { geraCodigoForEach(&$$, $5, $3, $7); }
             ;
 
 //#TK_ID deve ser array 
@@ -579,31 +566,31 @@ string geraDeclaracaoVarPipe() {
          "  double x_double;\n"
          "  float x_float;\n";
 }
-string geraDeclaracaoTemporarias() {
+string geraDeclaracaoTemporarias(string bloco) {
   string c;
   
-  for( int i = 0; i < n_var_temp["bool"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+bool"]; i++ )
     c += "  int temp_bool_" + toStr( i + 1 ) + ";\n";
     
-  for( int i = 0; i < n_var_temp["int"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+int"]; i++ )
     c += "  int temp_int_" + toStr( i + 1 ) + ";\n";
 
-    for( int i = 0; i < n_var_temp["char"]; i++ )
+    for( int i = 0; i < n_var_temp[bloco + "+char"]; i++ )
     c += "  char temp_char_" + toStr( i + 1 ) + ";\n";
     
-  for( int i = 0; i < n_var_temp["double"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+double"]; i++ )
     c += "  double temp_double_" + toStr( i + 1 ) + ";\n";
 
-    for( int i = 0; i < n_var_temp["float"]; i++ )
+    for( int i = 0; i < n_var_temp[bloco + "+float"]; i++ )
     c += "  float temp_float_" + toStr( i + 1 ) + ";\n";
     
-  for( int i = 0; i < n_var_temp["string"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+string"]; i++ )
     c += "  char temp_string_" + toStr( i + 1 ) + "[" + toStr( MAX_STR )+ "];\n";
     
   return c;  
 }
 string geraTemp( Tipo tipo ) {
-  return "temp_" + tipo.nome + "_" + toStr( ++n_var_temp[tipo.nome] );
+  return "temp_" + tipo.nome + "_" + toStr( ++n_var_temp[blocoAtual + "+" + tipo.nome] );
 }
 
 string obterCharDeDeclaracaoParaTipo(string tipo){
@@ -627,18 +614,23 @@ bool isTypeCompatibleWith(string lvalue, string rvalue){
 }
 
 void insereVariavelTS( TS& ts, string nomeVar, Tipo tipo ) {
-  if( !buscaVariavelTS( ts, nomeVar, &tipo ) )
-    ts[nomeVar] = tipo;
+  if( !buscaVariavelTS( ts, blocoAtual + "+" + nomeVar, &tipo ) )
+    ts[blocoAtual + "+" + nomeVar] = tipo;
   else  
     erro( "Variavel já definida: " + nomeVar );
 }
 bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
-  if( ts.find( nomeVar ) != ts.end() ) {
-    *tipo = ts[ nomeVar ];
+  if( ts.find( blocoAtual + "+" + nomeVar ) != ts.end() ) {
+    *tipo = ts[ blocoAtual + "+" + nomeVar ];
     return true;
   }
-  else
-    return false;
+  else{
+    if( ts.find( "global+" + nomeVar ) != ts.end() ) {
+      *tipo = ts[ "global+" + nomeVar ];
+      return true;
+    }
+  }
+  return false;
 }
 
 void insereFuncaoTF( TF& tf, string nomeVar, Tipo tipo, string args ) {
@@ -672,14 +664,12 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cm
           "  " + ifFalse + ":\n" + cmdsElse.c +
           "  " + ifFim + ":\n";
 }
-
 void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch) {
   *SS = Atributo();
   SS->c = exprSwitch.c;
   SS->v = exprSwitch.v;
   SS->t.nome = geraLabel( "if_fim_switch" );
 }
-
 void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
                                    const Atributo& cmdsCase, 
                                    const Atributo& valorExprSwitch, 
@@ -694,12 +684,9 @@ void geraCodigoCase( Atributo* SS, const Atributo& indiceCase,
 	  "  if( " + valorNotCond + " ) goto " + ifStartCase + ";\n" +
 	  valorExprSwitch.c + "  " + ifStartCase + ":\n" + cmdsCase.c + breakValue;
 }
-
 void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto ) {
   SS->c = SS->c + cmds.c + "\n  " + cmdCaseWithBreakGoto.t.nome + ":\n";
 }
-
-
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
                                   const Atributo& passo, 
@@ -720,7 +707,6 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial,
           cmds.c + passo.c + "  goto " + forCond + ";\n  " + 
           forFim + ":\n";
 }
-
 void geraCodigoWhile( Atributo* SS, const Atributo& condicao, 
                                     const Atributo& cmds ) {
   string whileCond = geraLabel( "while_cond" ),
@@ -737,7 +723,6 @@ void geraCodigoWhile( Atributo* SS, const Atributo& condicao,
           cmds.c + "  goto " + whileCond + ";\n  " + 
           whileFim + ":\n";
 }
-
 void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, 
                                       const Atributo& condicao ) {
   string whileInicio = geraLabel( "do_while_inicio" );
@@ -748,6 +733,52 @@ void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds,
   
   SS->c = "  " + whileInicio + ":\n" + cmds.c + condicao.c +
           "  if( " + condicao.v + " ) goto " + whileInicio + ";\n";
+}
+void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinicial, string valfinal, const Atributo& cmds ) {
+  string intvrCond = geraLabel( "intrv_cond" ),
+         intvrFim = geraLabel( "intrv_fim" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+         
+  string tokenMaiorMenor;
+  string tokenBiggerSmaller;
+  if (valinicial < valfinal){
+     tokenBiggerSmaller = "++";
+     tokenMaiorMenor = ">";
+  }
+  else{
+     tokenBiggerSmaller = "--";
+     tokenMaiorMenor = "<";
+  }
+  
+  SS->c = SS->c + variavel.c + 
+          "  " + variavel.v + "=" + valinicial + ";\n" + 
+          "  " + intvrCond + ":\n" + 
+          "  " + valorNotCond + " = " + variavel.v + tokenMaiorMenor + valfinal + ";\n" +
+          "  if( " + valorNotCond + " ) goto " + intvrFim + ";\n" +
+          cmds.c + "  " + variavel.v + tokenBiggerSmaller + ";\n" +
+          "  goto " + intvrCond + ";\n  " + 
+          intvrFim + ":\n";
+}
+void geraCodigoForEach( Atributo* SS, Atributo& variavel, Atributo& indice, const Atributo& cmds ) {
+  string feachCond = geraLabel( "feach_cond" ),
+         feachFim = geraLabel( "feach_fim" );
+  string valorNotCond = geraTemp( Tipo( "bool" ) );
+         
+  *SS = Atributo();
+  if( buscaVariavelTS( ts, indice.v, &indice.t ) ){
+    if( buscaVariavelTS( ts, variavel.v, &variavel.t ) ){
+      SS->c = SS->c + variavel.c + 
+          "  x_int = 0;\n" + 
+          "  " + indice.v + "= " + variavel.v + "[0];\n" + 
+          "  " + feachCond + ":\n" + 
+          "  " + valorNotCond + " = x_int >" + toStr(variavel.t.d1-1) + ";\n" +
+          "  if( " + valorNotCond + " ) goto " + feachFim + ";\n" + cmds.c + 
+          "  x_int++;\n" + 
+          "  " + indice.v + "= " + variavel.v + "[x_int];\n" + 
+          "  goto " + feachCond + ";\n  " + 
+          feachFim + ":\n";
+    }
+  }
 }
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {
