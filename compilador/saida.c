@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+int james(int x){
+  printf( "%s", "James\n" );
+}
+
 int main(){
   int x_int;
   double x_double;
@@ -55,9 +59,12 @@ int j;
 int b[2];
   float f[20];
 float g;
+  int z;
   char s[256];
   char s1[2560];
   char s2[5376];
+  z = 0;
+
   s[0] = 'M';
   s[1] = 0;
 
@@ -174,6 +181,10 @@ float g;
   printf( "%s", "Você digitou: " );
   printf( "%s", s );
   printf( "%s", "\n" );
+  printf( "%s", "\n" );
+  printf( "%d", z );
+  printf( "%s", "\n" );
+  james(z);
 
   return 0;
 }

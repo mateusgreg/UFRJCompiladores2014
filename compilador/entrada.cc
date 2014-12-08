@@ -1,11 +1,19 @@
+int james(int x){
+  printf("James\n");
+}
+
 int main() {
   
   int a, i, j, b[2];
   float f[10][2], g;
   
+  int z;
+  
   string s;
   string s1[10];
   string s2[3][7];
+  
+  z = 0;
   
   s = 'M';
   printf(s);
@@ -56,4 +64,7 @@ int main() {
   printf("\nAgora entre com uma palavra: ");
   scanf(s);
   printf("Você digitou: " + s + "\n");
+
+  printf("\n" + z + "\n");
+  james(z);
 }
