@@ -3,7 +3,8 @@
 #include <string.h>
 
 int james(int x){
-  printf( "%s", "James" );
+  printf( "%s", "James\n" );
+  return 1;
 }
 
 int main(){
@@ -15,8 +16,7 @@ int main(){
   int a;
   a = 0;
 
-  printf( "%d", a );
-  james(a);
+  printf( "%d",   james(a) );
 
   return 0;
 }

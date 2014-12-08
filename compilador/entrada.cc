@@ -1,5 +1,6 @@
 int james(int x){
-  printf("James");
+  printf("James\n");
+  return 1;
 }
 
 int main() {
@@ -7,6 +8,5 @@ int main() {
   int a;
   a = 0;
 
-  printf(a);
-  james(a);
+  printf(james(a));
 }
