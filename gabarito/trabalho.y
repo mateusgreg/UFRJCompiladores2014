@@ -63,11 +63,15 @@ VARIAVEIS : VARIAVEIS TIPO VAR ';'
           ;
 
 TIPO : TK_INT
-     | TK_CHAR
+     | TK_CHAR PTR
      | TK_FLOAT
      | TK_DOUBLE
      | TK_LONG
      ;
+
+PTR : '*'
+    |
+    ;
 
 VAR : TK_ID ARRAY
     | TK_ID ARRAY ',' VAR
@@ -149,6 +153,7 @@ F : TK_CINT
 
 PARAMS : F ',' PARAMS
        | F
+       ;
 
 INDICE : TK_CINT
        | TK_ID
