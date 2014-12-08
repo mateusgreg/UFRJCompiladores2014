@@ -43,6 +43,7 @@ struct Atributo {
   }
 };
 
+string blocoAtual = "global"; //Bloco em escrita, usado para escrita e leitura de variáveis
 typedef map< string, Tipo > TS;
 TS ts; // Tabela de simbolos
 
@@ -55,7 +56,7 @@ string passoPipeAtivo; // Label 'fim' do pipe ativo
 Tipo tipoResultado( Tipo a, string operador, Tipo b );
 string geraTemp( Tipo tipo );
 string geraLabel( string cmd );
-string geraDeclaracaoTemporarias();
+string geraDeclaracaoTemporarias(string bloco);
 string geraDeclaracaoVarPipe();
 
 string obterCharDeDeclaracaoParaTipo(string tipo);
@@ -152,38 +153,36 @@ LISTA_FUNCOES : FUNCAO LISTA_FUNCOES
                 { $$ = $1; }
               ;
 
-FUNCAO : TIPO TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
-         { geraDeclaracaoFuncao( &$$, $1, $2, $4, $6 ); }
-       | TK_VOID TK_ID '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
-         { geraDeclaracaoFuncao( &$$, $1, $2, $4, $6 ); }
+FUNCAO : TIPO TK_ID { blocoAtual = $2.v; } '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
+         { geraDeclaracaoFuncao( &$$, $1, $2, $5, $7 ); }
+       | TK_VOID TK_ID { blocoAtual = $2.v; } '(' ARGUMENTOS ')' CORPO_DE_FUNCAO
+         { geraDeclaracaoFuncao( &$$, $1, $2, $5, $7 ); }
        ;
 
-MAIN : TK_INT TK_MAIN '(' ')' MAIN_BLOCO 
+MAIN : TK_INT TK_MAIN { blocoAtual = "main"; } '(' ')' MAIN_BLOCO 
        { $$ = Atributo();
-         $$.c = "\nint main()" + $5.c + "\n";
+         $$.c = "\nint main()" + $6.c + "\n";
        }
      ; 
 
 MAIN_BLOCO : '{' VARIAVEIS COMANDOS '}'
              { $$ = Atributo();
                $$.c = "{\n" + geraDeclaracaoVarPipe() + "\n" + 
-			      geraDeclaracaoTemporarias() + "\n" +
+			      geraDeclaracaoTemporarias("main") + "\n" +
 			      $2.c + $3.c + 
                       "\n  return 0;\n}"; }
            ; 
      
-CORPO_DE_FUNCAO : BLOCO 
-		  { $$ = $1; }
+CORPO_DE_FUNCAO : '{' VARIAVEIS COMANDOS '}'
+                  { $$ = Atributo();
+                    $$.c = "{\n" + geraDeclaracaoVarPipe() + "\n" + 
+                                   geraDeclaracaoTemporarias(blocoAtual) + "\n"
+                                   + $2.c + $3.c + "}";
+                    $$.v = $3.v; }
                 | ';'
                   { $$ = Atributo();
                     $$.c = ';'; }
                 ;
-
-BLOCO : '{' VARIAVEIS COMANDOS '}'
-        { $$ = Atributo();
-          $$.c = "{\n" + $2.c + $3.c + "}";
-          $$.v = $3.v; }
-      ; 
 
 BLOCO_COMANDO : '{' VARIAVEIS COMANDOS '}'
 		{ $$ = Atributo();
@@ -579,31 +578,31 @@ string geraDeclaracaoVarPipe() {
          "  double x_double;\n"
          "  float x_float;\n";
 }
-string geraDeclaracaoTemporarias() {
+string geraDeclaracaoTemporarias(string bloco) {
   string c;
   
-  for( int i = 0; i < n_var_temp["bool"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+bool"]; i++ )
     c += "  int temp_bool_" + toStr( i + 1 ) + ";\n";
     
-  for( int i = 0; i < n_var_temp["int"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+int"]; i++ )
     c += "  int temp_int_" + toStr( i + 1 ) + ";\n";
 
-    for( int i = 0; i < n_var_temp["char"]; i++ )
+    for( int i = 0; i < n_var_temp[bloco + "+char"]; i++ )
     c += "  char temp_char_" + toStr( i + 1 ) + ";\n";
     
-  for( int i = 0; i < n_var_temp["double"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+double"]; i++ )
     c += "  double temp_double_" + toStr( i + 1 ) + ";\n";
 
-    for( int i = 0; i < n_var_temp["float"]; i++ )
+    for( int i = 0; i < n_var_temp[bloco + "+float"]; i++ )
     c += "  float temp_float_" + toStr( i + 1 ) + ";\n";
     
-  for( int i = 0; i < n_var_temp["string"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+string"]; i++ )
     c += "  char temp_string_" + toStr( i + 1 ) + "[" + toStr( MAX_STR )+ "];\n";
     
   return c;  
 }
 string geraTemp( Tipo tipo ) {
-  return "temp_" + tipo.nome + "_" + toStr( ++n_var_temp[tipo.nome] );
+  return "temp_" + tipo.nome + "_" + toStr( ++n_var_temp[blocoAtual + "+" + tipo.nome] );
 }
 
 string obterCharDeDeclaracaoParaTipo(string tipo){
@@ -627,18 +626,23 @@ bool isTypeCompatibleWith(string lvalue, string rvalue){
 }
 
 void insereVariavelTS( TS& ts, string nomeVar, Tipo tipo ) {
-  if( !buscaVariavelTS( ts, nomeVar, &tipo ) )
-    ts[nomeVar] = tipo;
+  if( !buscaVariavelTS( ts, blocoAtual + "+" + nomeVar, &tipo ) )
+    ts[blocoAtual + "+" + nomeVar] = tipo;
   else  
     erro( "Variavel já definida: " + nomeVar );
 }
 bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
-  if( ts.find( nomeVar ) != ts.end() ) {
-    *tipo = ts[ nomeVar ];
+  if( ts.find( blocoAtual + "+" + nomeVar ) != ts.end() ) {
+    *tipo = ts[ blocoAtual + "+" + nomeVar ];
     return true;
   }
-  else
-    return false;
+  else{
+    if( ts.find( "global+" + nomeVar ) != ts.end() ) {
+      *tipo = ts[ "global+" + nomeVar ];
+      return true;
+    }
+  }
+  return false;
 }
 
 void insereFuncaoTF( TF& tf, string nomeVar, Tipo tipo, string args ) {

@@ -3,7 +3,16 @@
 #include <string.h>
 
 int james(int& x){
+  int x_int;
+  double x_double;
+  float x_float;
+
+  int temp_int_1;
+
   printf( "%s", "James\n" );
+  temp_int_1 = x + 1;
+  x = temp_int_1;
+
   return x;
 }
 

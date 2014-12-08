@@ -1,5 +1,6 @@
 int james(int& x){
   printf("James\n");
+  x++;
   return x;
 }
 
