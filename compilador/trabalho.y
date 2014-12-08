@@ -232,7 +232,7 @@ TIPO : TK_INT
 
 VARIAVEIS : VARIAVEIS VARIAVEL ';' 
             { $$ = Atributo(); 
-              $$.c = $1.c + "  " + $2.c;}
+              $$.c = $1.c + $2.c;}
           | { $$ = Atributo(); }
           ;
 
@@ -692,11 +692,11 @@ void geraCodigoCase( Atributo* SS, const Atributo& indiceCase,
   
   SS->c = "  " + valorNotCond + " = " + indiceCase.v + " == " + valorExprSwitch.v + ";\n"
 	  "  if( " + valorNotCond + " ) goto " + ifStartCase + ";\n" +
-	  valorExprSwitch.c + ifStartCase + ":\n" + cmdsCase.c + breakValue;
+	  valorExprSwitch.c + "  " + ifStartCase + ":\n" + cmdsCase.c + breakValue;
 }
 
 void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto ) {
-  SS->c = SS->c + cmds.c + "\n" + cmdCaseWithBreakGoto.t.nome + ":\n";
+  SS->c = SS->c + cmds.c + "\n  " + cmdCaseWithBreakGoto.t.nome + ":\n";
 }
 
 
@@ -714,12 +714,10 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial,
   
   // Funciona apenas para filtro, sem pipe que precisa de buffer 
   // (sort, por exemplo, não funciona)
-  SS->c = inicial.c + forCond + ":\n" + condicao.c +
+  SS->c = inicial.c + "  " + forCond + ":\n" + condicao.c +
           "  " + valorNotCond + " = !" + condicao.v + ";\n" +
           "  if( " + valorNotCond + " ) goto " + forFim + ";\n" +
-          cmds.c +
-          passo.c +
-          "  goto " + forCond + ";\n" + 
+          cmds.c + passo.c + "  goto " + forCond + ";\n  " + 
           forFim + ":\n";
 }
 
@@ -733,11 +731,10 @@ void geraCodigoWhile( Atributo* SS, const Atributo& condicao,
   if( condicao.t.nome != "bool" )
     erro( "A expressão de teste deve ser booleana: " + condicao.t.nome ); 
   
-  SS->c = whileCond + ":\n" + condicao.c +
+  SS->c = "  " + whileCond + ":\n" + condicao.c +
           "  " + valorNotCond + " = !" + condicao.v + ";\n" +
           "  if( " + valorNotCond + " ) goto " + whileFim + ";\n" +
-          cmds.c +
-          "  goto " + whileCond + ";\n" + 
+          cmds.c + "  goto " + whileCond + ";\n  " + 
           whileFim + ":\n";
 }
 
@@ -749,7 +746,7 @@ void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds,
   if( condicao.t.nome != "bool" )
     erro( "A expressão de teste deve ser booleana: " + condicao.t.nome ); 
   
-  SS->c = whileInicio + ":\n" + cmds.c + condicao.c +
+  SS->c = "  " + whileInicio + ":\n" + cmds.c + condicao.c +
           "  if( " + condicao.v + " ) goto " + whileInicio + ";\n";
 }
 
@@ -763,19 +760,19 @@ void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo&
   
   if ( tipo.t.nome == "string" ) {
     switch( id.t.nDim ) {
-      case 0: SS->c = tipo.c + tipoNome + " " + id.v + "["+ toStr( MAX_STR ) +"]"; break;
-      case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * MAX_STR ) + "]"; break;
-      case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 * MAX_STR ) + "]";
+      case 0: SS->c = tipoNome + " " + id.v + "["+ toStr( MAX_STR ) +"]"; break;
+      case 1: SS->c = tipoNome + " " + id.v + "[" + toStr( id.t.d1 * MAX_STR ) + "]"; break;
+      case 2: SS->c = tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 * MAX_STR ) + "]";
     }
   } else {
     switch( id.t.nDim ) {
-      case 0: SS->c = tipo.c + tipoNome + " " + id.v; break;
-      case 1: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 ) + "]"; break;
-      case 2: SS->c = tipo.c + tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 ) + "]";
+      case 0: SS->c = tipoNome + " " + id.v; break;
+      case 1: SS->c = tipoNome + " " + id.v + "[" + toStr( id.t.d1 ) + "]"; break;
+      case 2: SS->c = tipoNome + " " + id.v + "[" + toStr( id.t.d1 * id.t.d2 ) + "]";
     }
   }
   
-  SS->c = SS->c + ";\n";
+  SS->c = tipo.c + "  " + SS->c + ";\n";
 }
 void geraDeclaracaoFuncao( Atributo* SS, const Atributo& tipo, const Atributo& id, const Atributo& argsFunc, const Atributo& cmdsFunc ) {
   if (cmdsFunc.c == ";") {
