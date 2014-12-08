@@ -73,7 +73,6 @@ void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalu
 Atributo geraCodigoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
 void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
-void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds );
 void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, 
                                         const Atributo& cmdsThen,
                                         const Atributo& cmdsElse );
@@ -203,17 +202,25 @@ ARGUMENTOS : ARGUMENTO
 //                 | ARGUMENTO
 //                 ;
 
-ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO
+ARGUMENTO : FUNCAO_TIPO TK_ID ARRAY ',' ARGUMENTO
             { insereVariavelTS( ts, $2.v, $1.t );
-              $$.c = $1.t.nome + " " + $2.v + ", " + $5.c;
-              $$.v = $$.v + $1.t.nome + "+";
+              $$.c = $1.c + " " + $2.v + ", " + $5.c;
+              $$.v = $$.v + $1.c + "+";
               $$.t.nDim++; } 
-          | TIPO TK_ID ARRAY
+          | FUNCAO_TIPO TK_ID ARRAY
             { insereVariavelTS( ts, $2.v, $1.t );
-              $$.c = $1.t.nome + " " + $2.v;
-              $$.v = $$.v + $1.t.nome;
+              $$.c = $1.c + " " + $2.v;
+              $$.v = $$.v + $1.c;
               $$.t.nDim++; } 
           ;
+
+FUNCAO_TIPO : TIPO
+              { $$ = $1; 
+                $$.c = $1.t.nome; }
+            | TIPO '&'
+              { $$ = $1; 
+                $$.c = $1.t.nome + "&"; }
+            ;
 
 TIPO : TK_INT
      | TK_CHAR
@@ -504,13 +511,21 @@ VALOR : CONST_INT
       | FUN_MERGE
       ;
 
-PARAMETROS : VALOR ',' PARAMETROS
+PARAMETROS : FUNCAO_VALOR ',' PARAMETROS
              { $$.c = $1.v + ", " + $3.c;
-               $$.v = $1.t.nome + "+" + $2.v; }
-           | VALOR
+               $$.v = $1.c + "+" + $2.v; }
+           | FUNCAO_VALOR
              { $$.c = $1.v;
-               $$.v = $1.t.nome; }
+               $$.v = $1.c; }
            ;
+
+FUNCAO_VALOR : VALOR
+               { $$ = $1; 
+                 $$.c = $1.t.nome; }
+             | '&' VALOR 
+               { $$ = $2; 
+                 $$.c = $2.t.nome + "&"; }
+             ;
 
 //#TK_ID deve ser apenas do tipo TK_INT
 INDICE : CONST_INT
@@ -783,17 +798,6 @@ void geraDeclaracaoFuncao( Atributo* SS, const Atributo& tipo, const Atributo& i
   else SS->c = tipo.c + tipoNome + " " + id.v;
   
   SS->c = SS->c + "(" + argsFunc.c + ")" + cmdsFunc.c + "\n";
-}
-void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
-  *SS = Atributo();
-  SS->c = "\nint main() {\n" +
-           geraDeclaracaoVarPipe() + 
-           "\n" + 
-           geraDeclaracaoTemporarias() + 
-           "\n" +
-           cmds.c + 
-           "  return 0;\n" 
-           "}\n";
 }
 
 void geraCodigoScanf( Atributo* SS, const Atributo& id, string indice1, string indice2 ) {
