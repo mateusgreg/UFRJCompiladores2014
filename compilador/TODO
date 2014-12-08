@@ -12,7 +12,7 @@ X 6) Expressões com precedência e associatividade de operadores
 X 8) concatenação de strings com operador "+"
 X 9) entrada e saida padrao (printf e scanf)
 X 9) verificação de tipos
-  10) verificação do número e tipo dos parâmetros de funções
+X 10) verificação do número e tipo dos parâmetros de funções
 X 11) Operadores básicos: ( ) + - / * % && || ! > < >=
 ----------------------------------------------------------------
 Exemplos de programas:

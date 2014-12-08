@@ -16,11 +16,12 @@ const int MAX_STR = 256;
 
 struct Tipo {
   string nome;
+  string argumentos;
   int nDim;
   int d1;
   int d2;
   
-  Tipo() { nome = ""; nDim = 0; d1 = 0; d2 = 0; }
+  Tipo() { nome = ""; argumentos = ""; nDim = 0; d1 = 0; d2 = 0; }
   Tipo( string nome ) {
     this->nome = nome;
     nDim = 0; 
@@ -60,8 +61,8 @@ string geraDeclaracaoVarPipe();
 string obterCharDeDeclaracaoParaTipo(string tipo);
 void insereVariavelTS( TS&, string nomeVar, Tipo tipo );
 bool buscaVariavelTS( TS&, string nomeVar, Tipo* tipo );
-void insereFuncaoTF( TF&, string nomeVar, Tipo tipo );
-bool buscaFuncaoTF( TF&, string nomeVar, Tipo* tipo );
+void insereFuncaoTF( TF&, string nomeVar, Tipo tipo, string args );
+bool buscaFuncaoTF( TF&, string nomeVar, Tipo* tipo, string args );
 void erro( string msg );
 int toInt( string n );
 string toStr( int n );
@@ -195,7 +196,6 @@ BLOCO_COMANDO : '{' VARIAVEIS COMANDOS '}'
 
 ARGUMENTOS : ARGUMENTO
              { $$ = $1; }
-//           | MULTI_ARGUMENTOS
            | { $$ = Atributo(); }
            ;
 
@@ -203,10 +203,15 @@ ARGUMENTOS : ARGUMENTO
 //                 | ARGUMENTO
 //                 ;
 
-ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO 
+ARGUMENTO : TIPO TK_ID ARRAY ',' ARGUMENTO
+            { insereVariavelTS( ts, $2.v, $1.t );
+              $$.c = $1.t.nome + " " + $2.v + ", " + $5.c;
+              $$.v = $$.v + $1.t.nome + "+";
+              $$.t.nDim++; } 
           | TIPO TK_ID ARRAY
             { insereVariavelTS( ts, $2.v, $1.t );
               $$.c = $1.t.nome + " " + $2.v;
+              $$.v = $$.v + $1.t.nome;
               $$.t.nDim++; } 
           ;
 
@@ -403,13 +408,13 @@ CMD_RETURN : TK_RETURN VALOR
            ;
 
 FUN_PROC : TK_ID '(' ')'
-           { if( buscaFuncaoTF( tf, $1.v, &$$.t ) ){ 
+           { if( buscaFuncaoTF( tf, $1.v, &$$.t, "" ) ){ 
                 $$.v = "  " + $1.v + "()"; 
              }else
                  erro( "Variavel nao declarada: " + $1.v );
            }
          | TK_ID '(' PARAMETROS ')'
-           { if( buscaFuncaoTF( tf, $1.v, &$$.t ) ){ 
+           { if( buscaFuncaoTF( tf, $1.v, &$$.t, $3.v ) ){ 
                 $$.v = "  " + $1.v + "(" + $3.c + ")"; 
              }else
                  erro( "Variavel nao declarada: " + $1.v );
@@ -500,9 +505,11 @@ VALOR : CONST_INT
       ;
 
 PARAMETROS : VALOR ',' PARAMETROS
-             { $$.c = $1.v + ", " + $3.c; }
+             { $$.c = $1.v + ", " + $3.c;
+               $$.v = $1.t.nome + "+" + $2.v; }
            | VALOR
-             { $$.c = $1.v; }
+             { $$.c = $1.v;
+               $$.v = $1.t.nome; }
            ;
 
 //#TK_ID deve ser apenas do tipo TK_INT
@@ -619,19 +626,21 @@ bool buscaVariavelTS( TS& ts, string nomeVar, Tipo* tipo ) {
     return false;
 }
 
-void insereFuncaoTF( TF& tf, string nomeVar, Tipo tipo ) {
-  if( !buscaFuncaoTF( tf, nomeVar, &tipo ) )
+void insereFuncaoTF( TF& tf, string nomeVar, Tipo tipo, string args ) {
+  tipo.argumentos = args;
+  if( !buscaFuncaoTF( tf, nomeVar, &tipo, args ) )
     tf[nomeVar] = tipo;
   else  
     erro( "Variavel já definida: " + nomeVar );
 }
-bool buscaFuncaoTF( TF& tf, string nomeVar, Tipo* tipo ) {
+bool buscaFuncaoTF( TF& tf, string nomeVar, Tipo* tipo, string args ) {
   if( tf.find( nomeVar ) != tf.end() ) {
-    *tipo = tf[ nomeVar ];
-    return true;
+    if (tf[ nomeVar ].argumentos == args) {
+      *tipo = tf[ nomeVar ];
+      return true;
+    } else erro ("Número de argumentos na função " + nomeVar + " está incorreto. Devia ser " + tf[ nomeVar ].argumentos + " mas é " + args + ".");
   }
-  else
-    return false;
+  return false;
 }
 
 void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen, const Atributo& cmdsElse ) {
@@ -755,11 +764,11 @@ void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo&
 }
 void geraDeclaracaoFuncao( Atributo* SS, const Atributo& tipo, const Atributo& id, const Atributo& argsFunc, const Atributo& cmdsFunc ) {
   if (cmdsFunc.c == ";") {
-     if( buscaFuncaoTF( tf, id.v, &SS->t) ) return;
-     else insereFuncaoTF( tf, id.v, tipo.t );
+     if( buscaFuncaoTF( tf, id.v, &SS->t, argsFunc.v) ) return;
+     else insereFuncaoTF( tf, id.v, tipo.t, argsFunc.v );
   } else {
-     if( buscaFuncaoTF( tf, id.v, &SS->t) ) SS->v = id.v;
-     else insereFuncaoTF( tf, id.v, tipo.t ); 
+     if( buscaFuncaoTF( tf, id.v, &SS->t, argsFunc.v) ) SS->v = id.v;
+     else insereFuncaoTF( tf, id.v, tipo.t, argsFunc.v ); 
   }
 
   SS->t = tipo.t;
