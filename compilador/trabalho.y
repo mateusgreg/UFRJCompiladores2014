@@ -67,7 +67,7 @@ int toInt( string n );
 string toStr( int n );
 string toUpperString( string input );
 
-void geraCodigoScanf( Atributo* SS, const Atributo& id, int indice1, int indice2 );
+void geraCodigoScanf( Atributo* SS, const Atributo& id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, string indice1 = "0", string indice2 = "0" );
 Atributo geraCodigoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
@@ -277,7 +277,8 @@ COMANDO : CMD_ATRIB ';'
             $$.c += ";"; }
         | FUN_PROC ';'
           { $$ = $1;
-            $$.c += ";"; }
+            $$.c = $$.v + ";";
+            $$.v = ""; }
         | CMD_PRINTF ';'
           { $$ = $1;
             $$.c += ";"; }
@@ -526,11 +527,11 @@ STR_PRINTF : '+' VALOR STR_PRINTF
            ;
            
 CMD_SCANF : TK_SCANF '(' TK_ID ')'
-	     { geraCodigoScanf( &$$, $3, 0, 0 ); }  
+	     { geraCodigoScanf( &$$, $3 ); }
           | TK_SCANF '(' TK_ID '[' INDICE ']' ')'
-            { geraCodigoScanf( &$$, $3, toInt($5.v), 0 ); }
+            { geraCodigoScanf( &$$, $3, $5.v ); }
           | TK_SCANF '(' TK_ID '[' INDICE ']' '[' INDICE ']' ')'
-            { geraCodigoScanf( &$$, $3, toInt($5.v), toInt($8.v) ); }
+            { geraCodigoScanf( &$$, $3, $5.v, $8.v ); }
           ;
 %%
 int nlinha = 1;
@@ -786,12 +787,17 @@ void geraCodigoFuncaoPrincipal( Atributo* SS, const Atributo& cmds ) {
            "}\n";
 }
 
-void geraCodigoScanf( Atributo* SS, const Atributo& id, int indice1, int indice2 ) {
+void geraCodigoScanf( Atributo* SS, const Atributo& id, string indice1, string indice2 ) {
   if( buscaVariavelTS( ts, id.v, &SS->t ) ){ 
-    if (SS->t.nDim == 0)
-      SS->c = id.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo(SS->t.nome) + "\", &" + id.v + " )";
-    else
-      SS->c = id.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo(SS->t.nome) + "\", &" + id.v + "[" + /*toStr( geraCodigoIndice(SS->t, id.v, indice1, indice2) )*/ + "]" + " )";
+    if (SS->t.nDim == 0) {
+      if (SS->t.nome == "string")
+        SS->c = id.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo(SS->t.nome) + "\", " + id.v + " )";
+      else
+        SS->c = id.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo(SS->t.nome) + "\", &" + id.v + " )";
+    }else {
+      Atributo indice = geraCodigoIndice( SS->t, id.v, indice1, indice2 );
+      SS->c = id.c + indice.c + "  scanf( \"%" + obterCharDeDeclaracaoParaTipo(SS->t.nome) + "\", &" + id.v + "[" + indice.v + "]" + " )";
+    }
   }else erro( "Variavel nao declarada: " + id.v );
 }
 
