@@ -26,7 +26,7 @@ Acima de 5 pontos:
 Pipes:
 Até 9 pontos:
 X 12) intervalo: [ 0 .. 10 ] 
-  13) filter[ x % 2 == 0 ]
+X 13) filter[ x % 2 == 0 ]
 X 14) forEach[ print( x ) ]
   15) firstN[ 10 ]
   16) lastN[ 10 ]

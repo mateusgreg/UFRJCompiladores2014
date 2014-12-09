@@ -113,7 +113,7 @@ void yyerror(const char *);
 %}
 
 %token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK
-%token TK_INTERVAL TK_IN TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT 
+%token TK_PIPE TK_X TK_INTERVAL TK_IN TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT 
 %token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
 %token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
 %token CONST_INT CONST_CHAR CONST_BOOLEAN CONST_FLOAT CONST_DOUBLE CONST_STRING
@@ -264,6 +264,8 @@ ARRAY : '[' CONST_INT ']' '[' CONST_INT ']'
 COMANDOS : COMANDO COMANDOS
            { $$ = Atributo();
              $$.c = $1.c + '\n' + $2.c; }
+         | CMD_PIPE ';' COMANDOS
+           { $$.c = $1.c + $3.c; }
          | { $$ = Atributo(); }
          ;
 
@@ -337,6 +339,64 @@ CMD_BREAK : TK_BREAK ';'
           | { $$.v = ""; }
           ;
 
+          
+          
+          
+          
+          
+          
+          
+          
+CMD_PIPE : TK_INTERVAL '[' OPERACAO TK_FROM_TO INI_PIPE ']' PROCS CONSOME 
+          { 
+            Atributo inicio, condicao, passo, cmd;
+            
+            inicio.c = $3.c + $5.c +
+                       "  x_" + pipeAtivo + " = " + $3.v + ";\n";
+            condicao.t.nome = "bool";
+            condicao.v = geraTemp( Tipo( "bool" ) ); 
+            condicao.c = "  " + condicao.v + " = " + "x_" + pipeAtivo + 
+                         " <= " + $5.v + ";\n";
+            passo.c = passoPipeAtivo + ":\n" + 
+                      "  x_" + pipeAtivo + " = x_" + pipeAtivo + " + 1;\n";
+            cmd.c = $7.c + $8.c;
+            
+            geraCodigoFor( &$$, inicio, condicao, passo, cmd );
+            
+            pipeAtivo = "";
+          }
+        ;
+
+INI_PIPE : OPERACAO
+           { $$ = $1;
+             pipeAtivo = $1.t.nome;
+             passoPipeAtivo = geraLabel( "passo_pipe" ); }
+         ;    
+        
+PROCS : TK_PIPE PROC PROCS 
+        { $$.c = $2.c + $3.c; }
+      | TK_PIPE
+        { $$ = Atributo(); }
+      ;
+      
+PROC : TK_FILTER '[' OPERACAO ']'
+       { geraCodigoFilter( &$$, $3 ); }
+     ;
+      
+CONSOME : TK_FOR_EACH '[' COMANDO ']'
+          { $$.c = $3.c; }
+        ;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+          
 CMD_INTERVAL : TK_INTERVAL '(' TK_ID '=' INDICE TK_FROM_TO INDICE ')' BLOCO_COMANDO
                { geraCodigoInterval( &$$, $3, $5.v, $7.v, $9); }
              ;
@@ -483,6 +543,12 @@ VALOR : CONST_INT
         { geraCodigoValorVetor( &$$, $1, $3.v, $6.v ); }
       | FUN_PROC
         { $$ = $1; }
+      | TK_X
+        { if( pipeAtivo != "" )
+            $$ = Atributo( "x_" + pipeAtivo, pipeAtivo );
+          else
+            erro( "Variavel 'x' so pode ser usada dentro de pipe" );
+        }
       | FUN_SORT
       | FUN_FIRST_N
       | FUN_LAST_N
@@ -655,12 +721,14 @@ void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cm
           "  " + ifFalse + ":\n" + cmdsElse.c +
           "  " + ifFim + ":\n";
 }
+
 void geraCodigoSwitchCase( Atributo* SS, const Atributo& exprSwitch) {
   *SS = Atributo();
   SS->c = exprSwitch.c;
   SS->v = exprSwitch.v;
   SS->t.nome = geraLabel( "if_fim_switch" );
 }
+
 void geraCodigoCase( Atributo* SS, const Atributo& indiceCase, 
                                    const Atributo& cmdsCase, 
                                    const Atributo& valorExprSwitch, 
@@ -675,9 +743,11 @@ void geraCodigoCase( Atributo* SS, const Atributo& indiceCase,
 	  "  if( " + valorNotCond + " ) goto " + ifStartCase + ";\n" +
 	  valorExprSwitch.c + "  " + ifStartCase + ":\n" + cmdsCase.c + breakValue;
 }
+
 void geraCodigoDefault( Atributo* SS, const Atributo& cmds, const Atributo& cmdCaseWithBreakGoto ) {
   SS->c = SS->c + cmds.c + "\n  " + cmdCaseWithBreakGoto.t.nome + ":\n";
 }
+
 void geraCodigoFor( Atributo* SS, const Atributo& inicial, 
                                   const Atributo& condicao, 
                                   const Atributo& passo, 
@@ -698,6 +768,7 @@ void geraCodigoFor( Atributo* SS, const Atributo& inicial,
           cmds.c + passo.c + "  goto " + forCond + ";\n  " + 
           forFim + ":\n";
 }
+
 void geraCodigoWhile( Atributo* SS, const Atributo& condicao, 
                                     const Atributo& cmds ) {
   string whileCond = geraLabel( "while_cond" ),
@@ -714,6 +785,7 @@ void geraCodigoWhile( Atributo* SS, const Atributo& condicao,
           cmds.c + "  goto " + whileCond + ";\n  " + 
           whileFim + ":\n";
 }
+
 void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds, 
                                       const Atributo& condicao ) {
   string whileInicio = geraLabel( "do_while_inicio" );
@@ -725,6 +797,15 @@ void geraCodigoDoWhile( Atributo* SS, const Atributo& cmds,
   SS->c = "  " + whileInicio + ":\n" + cmds.c + condicao.c +
           "  if( " + condicao.v + " ) goto " + whileInicio + ";\n";
 }
+
+void geraCodigoFilter( Atributo* SS, const Atributo& condicao ) {
+  *SS = Atributo();
+  SS->v = geraTemp( Tipo( "bool" ) );
+  SS->c = condicao.c + 
+          "  " + SS->v + " = !" + condicao.v + ";\n" +
+          "  if( " + SS->v + " ) goto " + passoPipeAtivo + ";\n";
+}
+
 void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinicial, string valfinal, const Atributo& cmds ) {
   string intvrCond = geraLabel( "intrv_cond" ),
          intvrFim = geraLabel( "intrv_fim" );
@@ -750,6 +831,7 @@ void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinici
           "  goto " + intvrCond + ";\n  " + 
           intvrFim + ":\n";
 }
+
 void geraCodigoForEach( Atributo* SS, Atributo& variavel, Atributo& indice, const Atributo& cmds ) {
   string feachCond = geraLabel( "feach_cond" ),
          feachFim = geraLabel( "feach_fim" );
@@ -1050,7 +1132,7 @@ void inicializaResultadoOperador() {
   resultadoOperador["int!=int"] = Tipo( "bool" );
   resultadoOperador["int==int"] = Tipo( "bool" );
   resultadoOperador["int<=int"] = Tipo( "bool" );
-  resultadoOperador["int=>int"] = Tipo( "bool" );
+  resultadoOperador["int>=int"] = Tipo( "bool" );
   resultadoOperador["int&&int"] = Tipo( "bool" );
   resultadoOperador["int||int"] = Tipo( "bool" );
   resultadoOperador["int%int"] = Tipo( "int" );
@@ -1065,7 +1147,7 @@ void inicializaResultadoOperador() {
   resultadoOperador["int!=float"] = Tipo( "bool" );
   resultadoOperador["int==float"] = Tipo( "bool" );
   resultadoOperador["int<=float"] = Tipo( "bool" );
-  resultadoOperador["int=>float"] = Tipo( "bool" );
+  resultadoOperador["int>=float"] = Tipo( "bool" );
   resultadoOperador["int&&float"] = Tipo( "bool" );
   resultadoOperador["int||float"] = Tipo( "bool" );
   
@@ -1079,7 +1161,7 @@ void inicializaResultadoOperador() {
   resultadoOperador["float!=float"] = Tipo( "bool" );
   resultadoOperador["float==float"] = Tipo( "bool" );
   resultadoOperador["float<=float"] = Tipo( "bool" );
-  resultadoOperador["float=>float"] = Tipo( "bool" );
+  resultadoOperador["float>=float"] = Tipo( "bool" );
   resultadoOperador["float&&float"] = Tipo( "bool" );
   resultadoOperador["float||float"] = Tipo( "bool" );
   
@@ -1093,7 +1175,7 @@ void inicializaResultadoOperador() {
   resultadoOperador["int!=double"] = Tipo( "bool" );
   resultadoOperador["int==double"] = Tipo( "bool" );
   resultadoOperador["int<=double"] = Tipo( "bool" );
-  resultadoOperador["int=>double"] = Tipo( "bool" );
+  resultadoOperador["int>=double"] = Tipo( "bool" );
   resultadoOperador["int&&double"] = Tipo( "bool" );
   resultadoOperador["int||double"] = Tipo( "bool" );
   
@@ -1107,7 +1189,7 @@ void inicializaResultadoOperador() {
   resultadoOperador["float!=double"] = Tipo( "bool" );
   resultadoOperador["float==double"] = Tipo( "bool" );
   resultadoOperador["float<=double"] = Tipo( "bool" );
-  resultadoOperador["float=>double"] = Tipo( "bool" );
+  resultadoOperador["float>=double"] = Tipo( "bool" );
   resultadoOperador["float&&double"] = Tipo( "bool" );
   resultadoOperador["float||double"] = Tipo( "bool" );
   
@@ -1121,7 +1203,7 @@ void inicializaResultadoOperador() {
   resultadoOperador["double!=double"] = Tipo( "bool" );
   resultadoOperador["double==double"] = Tipo( "bool" );
   resultadoOperador["double<=double"] = Tipo( "bool" );
-  resultadoOperador["double=>double"] = Tipo( "bool" );
+  resultadoOperador["double>=double"] = Tipo( "bool" );
   resultadoOperador["double&&double"] = Tipo( "bool" );
   resultadoOperador["double||double"] = Tipo( "bool" );
   

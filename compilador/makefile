@@ -4,10 +4,10 @@ all: trabalho entrada.cc
 #	g++ -o saida saida.c
 #	./saida
 
-	./trabalho < entrada_mdc.cc > saida_mdc.c
-	../gabarito/trabalho < saida_mdc.c
-	g++ -o saida_mdc saida_mdc.c
-	./saida_mdc
+#	./trabalho < entrada_mdc.cc > saida_mdc.c
+#	../gabarito/trabalho < saida_mdc.c
+#	g++ -o saida_mdc saida_mdc.c
+#	./saida_mdc
 
 #	./trabalho < entrada_matrizes.cc > saida_matrizes.c
 #	../gabarito/trabalho < saida_matrizes.c
@@ -18,6 +18,11 @@ all: trabalho entrada.cc
 #	../gabarito/trabalho < saida_equacao2grau.c
 #	g++ -o saida_equacao2grau saida_equacao2grau.c
 #	./saida_equacao2grau
+
+	./trabalho < entrada_pipe.cc > saida_pipe.c
+	../gabarito/trabalho < saida_pipe.c
+	g++ -o saida_pipe saida_pipe.c
+	./saida_pipe
 
 lex.yy.c: trabalho.lex
 	lex trabalho.lex

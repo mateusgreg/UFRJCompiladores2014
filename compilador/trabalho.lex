@@ -14,6 +14,7 @@ CASE     [Cc][Aa][Ss][Ee]
 DEFAULT  [Dd][Ee][Ff][Aa][Uu][Ll][Tt]
 BREAK    [Bb][Rr][Ee][Aa][Kk]
 INTERVAL [Ii][Nn][Tt][Ee][Rr][Vv][Aa][Ll]
+FILTER   [Ff][Ii][Ll][Tt][Ee][Rr]
 FOREACH  [Ff][Oo][Rr][Ee][Aa][Cc][Hh]
 IN       [Ii][Nn]
 
@@ -47,7 +48,7 @@ COMMENT "//".*
 {DEFAULT}  { yylval = Atributo( yytext ); return TK_DEFAULT; }
 {BREAK}    { yylval = Atributo( yytext ); return TK_BREAK; }
 {INTERVAL} { yylval = Atributo( yytext ); return TK_INTERVAL; }
-"filter"   { yylval = Atributo( yytext ); return TK_FILTER; }
+{FILTER}   { yylval = Atributo( yytext ); return TK_FILTER; }
 {FOREACH}  { yylval = Atributo( yytext ); return TK_FOR_EACH; }
 {IN}       { yylval = Atributo( yytext ); return TK_IN; }
 "sort"     { yylval = Atributo( yytext ); return TK_SORT; }
@@ -72,6 +73,8 @@ COMMENT "//".*
 "<="       { yylval = Atributo( yytext ); return TK_MENOR_IGUAL; }
 "++"       { yylval = Atributo( yytext ); return TK_ADICIONA_UM; }
 "--"       { yylval = Atributo( yytext ); return TK_DIMINUI_UM; }
+
+"=>"       { yylval = Atributo( yytext ); return TK_PIPE; }
 ".."       { yylval = Atributo( yytext ); return TK_FROM_TO; }
 
 "printf"   { yylval = Atributo( yytext ); return TK_PRINTF; }
@@ -84,6 +87,8 @@ COMMENT "//".*
 {FLOAT}    { yylval = Atributo( yytext ); return CONST_FLOAT; }
 {CHAR}     { yylval = Atributo( yytext ); return CONST_CHAR; }
 {STR}      { yylval = Atributo( yytext ); return CONST_STRING; }
+
+"x"        { yylval = Atributo( yytext ); return TK_X; }
 
 {ID}       { yylval = Atributo( yytext ); return TK_ID; }
 .          { yylval = Atributo( yytext ); return *yytext; }
