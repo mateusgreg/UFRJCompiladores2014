@@ -190,7 +190,7 @@ ARGUMENTOS : ARGUMENTO
 ARGUMENTO : FUNCAO_TIPO TK_ID ARRAY ',' ARGUMENTO
             { insereVariavelTS( ts, $2.v, $1.t );
               $$.c = $1.c + " " + $2.v + ", " + $5.c;
-              $$.v = $$.v + $1.c + "+";
+              $$.v = $$.v + $1.c + "+" + $5.v;
               $$.t.nDim++; } 
           | FUNCAO_TIPO TK_ID ARRAY
             { insereVariavelTS( ts, $2.v, $1.t );
@@ -500,7 +500,7 @@ VALOR : CONST_INT
 
 PARAMETROS : FUNCAO_VALOR ',' PARAMETROS
              { $$.c = $1.v + ", " + $3.c;
-               $$.v = $1.c + "+" + $2.v; }
+               $$.v = $1.c + "+" + $3.v; }
            | FUNCAO_VALOR
              { $$.c = $1.v;
                $$.v = $1.c; }

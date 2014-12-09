@@ -4,6 +4,14 @@ int james(int& x){
   return x;
 }
 
+int foo(int y, int &w, int xpto) {
+  int z;
+  w = 10;
+  z = y + w + xpto;
+  
+  return z;
+}
+
 int main() {
   
   int a, i, j, b[2];
@@ -41,7 +49,7 @@ int main() {
   printf("\na = " + a);
   
   b[1] = 50;
-  b[0] = 2;
+  //b[0] = 2;
   a = b[1];
   printf("\na = " + a);
   
@@ -72,11 +80,26 @@ int main() {
   printf("\n" + z + "\n");
   james(&z);
   
+  printf("\n");
+  
   interval (z = 1..10){
     printf(z + "\n");
   }
   
+  printf("\n");
+  
   forEach (x in b){
     printf(x + "\n");
   }
+  
+  z = 17;
+  
+  printf("\n");
+  printf(james(&z) + "\n");
+  
+  printf("\n");
+  printf("foo: " + foo(1, &z, 20) + "\n");
+  
+  printf("\n");
+  printf("z: " + z + "\n");
 }

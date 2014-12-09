@@ -15,6 +15,23 @@ int james(int& x){
 
   return x;
 }
+int foo(int y, int& w, int xpto){
+  int x_int;
+  double x_double;
+  float x_float;
+
+  int temp_int_1;
+  int temp_int_2;
+
+  int z;
+  w = 10;
+
+  temp_int_1 = y + w;
+  temp_int_2 = temp_int_1 + xpto;
+  z = temp_int_2;
+
+  return z;
+}
 
 int main(){
   int x_int;
@@ -62,7 +79,6 @@ int main(){
   int temp_int_37;
   int temp_int_38;
   int temp_int_39;
-  int temp_int_40;
   char temp_string_1[256];
   char temp_string_2[256];
 
@@ -148,50 +164,47 @@ int main(){
   temp_int_20 = 1;
   b[temp_int_20] = 50;
 
-  temp_int_21 = 0;
-  b[temp_int_21] = 2;
-
-  temp_int_22 = 1;
-  a = b[temp_int_22];
+  temp_int_21 = 1;
+  a = b[temp_int_21];
 
   printf( "%s", "\na = " );
   printf( "%d", a );
-  temp_int_23 = a + 1;
-  a = temp_int_23;
+  temp_int_22 = a + 1;
+  a = temp_int_22;
 
   printf( "%s", "\nO valor de 'a' é: " );
   printf( "%d", a );
   printf( "%s", "\n" );
-  temp_int_24 = 7 * 2;
-  temp_int_25 = temp_int_24 + 1;
-  f[temp_int_25] = 3.5;
+  temp_int_23 = 7 * 2;
+  temp_int_24 = temp_int_23 + 1;
+  f[temp_int_24] = 3.5;
 
   printf( "%s", "\nf = " );
-  temp_int_27 = 7 * 2;
-  temp_int_28 = temp_int_27 + 1;
-  printf( "%f", f[temp_int_28] );
-  temp_int_30 = 7 * 2;
-  temp_int_31 = temp_int_30 + 1;
-  g = f[temp_int_31];
+  temp_int_26 = 7 * 2;
+  temp_int_27 = temp_int_26 + 1;
+  printf( "%f", f[temp_int_27] );
+  temp_int_29 = 7 * 2;
+  temp_int_30 = temp_int_29 + 1;
+  g = f[temp_int_30];
 
   printf( "%s", "\ng = " );
   printf( "%f", g );
   printf( "%s", "\n" );
   printf( "%s", "\n\nEntre com um numero inteiro: " );
-  temp_int_33 = 1;
-  scanf( "%d", &b[temp_int_33] );
+  temp_int_32 = 1;
+  scanf( "%d", &b[temp_int_32] );
   printf( "%s", "Você digitou: " );
-  temp_int_34 = 1;
-  printf( "%d", b[temp_int_34] );
+  temp_int_33 = 1;
+  printf( "%d", b[temp_int_33] );
   printf( "%s", "\n" );
   printf( "%s", "\nEntre com um numero real (float): " );
-  temp_int_35 = 7 * 2;
-  temp_int_36 = temp_int_35 + 1;
-  scanf( "%f", &f[temp_int_36] );
+  temp_int_34 = 7 * 2;
+  temp_int_35 = temp_int_34 + 1;
+  scanf( "%f", &f[temp_int_35] );
   printf( "%s", "Você digitou: " );
-  temp_int_38 = 7 * 2;
-  temp_int_39 = temp_int_38 + 1;
-  printf( "%f", f[temp_int_39] );
+  temp_int_37 = 7 * 2;
+  temp_int_38 = temp_int_37 + 1;
+  printf( "%f", f[temp_int_38] );
   printf( "%s", "\n" );
   printf( "%s", "\nAgora entre com uma palavra: " );
   scanf( "%s", s );
@@ -203,6 +216,7 @@ int main(){
   printf( "%d", z );
   printf( "%s", "\n" );
   james(z);
+  printf( "%s", "\n" );
   z=1;
   L_intrv_cond_1:
   temp_bool_1 = z>10;
@@ -213,6 +227,7 @@ int main(){
   goto L_intrv_cond_1;
   L_intrv_fim_1:
 
+  printf( "%s", "\n" );
   x_int = 0;
   x= b[0];
   L_feach_cond_1:
@@ -225,6 +240,19 @@ int main(){
   goto L_feach_cond_1;
   L_feach_fim_1:
 
+  z = 17;
+
+  printf( "%s", "\n" );
+  printf( "%d",   james(z) );
+  printf( "%s", "\n" );
+  printf( "%s", "\n" );
+  printf( "%s", "foo: " );
+  printf( "%d",   foo(1, z, 20) );
+  printf( "%s", "\n" );
+  printf( "%s", "\n" );
+  printf( "%s", "z: " );
+  printf( "%d", z );
+  printf( "%s", "\n" );
 
   return 0;
 }
