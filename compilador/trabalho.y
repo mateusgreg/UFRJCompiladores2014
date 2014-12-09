@@ -73,7 +73,8 @@ void geraCodigoScanf( Atributo* SS, const Atributo& id, string indice1 = "0", st
 void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, string indice1 = "0", string indice2 = "0" );
 Atributo geraCodigoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo& S2, const Atributo& S3 );
-void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value );
+void geraCodigoOperadorNegacao( Atributo* SS, const Atributo& oper, const Atributo& value );
+void geraCodigoOperadorMenos( Atributo* SS, const Atributo& oper, const Atributo& value );
 
 void geraCodigoIfComElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen, const Atributo& cmdsElse );
 void geraCodigoIfSemElse( Atributo* SS, const Atributo& expr, const Atributo& cmdsThen );
@@ -398,20 +399,20 @@ CMD_ATRIB : TK_ID '=' OPERACAO
 CMD_RETURN : TK_RETURN VALOR
              { $$.c = "  return " + $2.v; }
            | TK_RETURN
-             { $$.c = "  return 0"; }
+             { $$.c = "  return"; }
            ;
 
 FUN_PROC : TK_ID '(' ')'
            { if( buscaFuncaoTF( tf, $1.v, &$$.t, "" ) ){ 
                 $$.v = "  " + $1.v + "()"; 
              }else
-                 erro( "Variavel nao declarada: " + $1.v );
+                 erro( "Funcao nao declarada: " + $1.v );
            }
          | TK_ID '(' PARAMETROS ')'
            { if( buscaFuncaoTF( tf, $1.v, &$$.t, $3.v ) ){ 
-                $$.v = "  " + $1.v + "(" + $3.c + ")"; 
+               $$.v = "  " + $1.v + "(" + $3.c + ")"; 
              }else
-                 erro( "Variavel nao declarada: " + $1.v );
+               erro( "Funcao nao declarada: " + $1.v );
            }
          ;
 
@@ -442,7 +443,9 @@ OPERACAO : OPERACAO '+' OPERACAO
          | OPERACAO TK_DIFERENTE OPERACAO
            { geraCodigoOperadorBinario( &$$, $1, $2, $3 ); }
          | '!' OPERACAO
-           { geraCodigoOperadorUnario(&$$, $1, $2); }
+           { geraCodigoOperadorNegacao(&$$, $1, $2); }
+         | '-' OPERACAO
+           { geraCodigoOperadorMenos(&$$, $1, $2); }
          | '(' OPERACAO ')'
            { $$ = $2; }
          | VALOR
@@ -638,7 +641,7 @@ void insereFuncaoTF( TF& tf, string nomeVar, Tipo tipo, string args ) {
   if( !buscaFuncaoTF( tf, nomeVar, &tipo, args ) )
     tf[nomeVar] = tipo;
   else  
-    erro( "Variavel já definida: " + nomeVar );
+    erro( "Funcao já definida: " + nomeVar );
 }
 bool buscaFuncaoTF( TF& tf, string nomeVar, Tipo* tipo, string args ) {
   if( tf.find( nomeVar ) != tf.end() ) {
@@ -987,13 +990,27 @@ void geraCodigoOperadorBinario( Atributo* SS, const Atributo& S1, const Atributo
     SS->c = S1.c + S3.c + 
             "  " + SS->v + " = " + S1.v + " " + S2.v + " " + S3.v + ";\n";
 }
-void geraCodigoOperadorUnario( Atributo* SS, const Atributo& oper, const Atributo& value ) {
+
+void geraCodigoOperadorNegacao( Atributo* SS, const Atributo& oper, const Atributo& value ) {
   SS->t = Tipo("bool");
   SS->v = geraTemp( SS->t );
 
   if( value.t.nome == "int" || value.t.nome == "bool") {
     SS->c = value.c + 
             "\n  " + SS->v + " = !" + value.v + ";\n\n";
+  }
+  else erro( "Operacao nao permitida: " + oper.v + value.v);
+}
+
+void geraCodigoOperadorMenos( Atributo* SS, const Atributo& oper, const Atributo& value ) {
+  SS->t = value.t;
+  SS->v = geraTemp( SS->t );
+  string menosUm = geraTemp ( Tipo ( "int" ) );
+  
+  if( value.t.nome == "int" || value.t.nome == "float" || value.t.nome == "double") {
+    SS->c = value.c + "\n" 
+            "  " + menosUm + " = -1;\n"
+            "  " + SS->v + " = " + menosUm + " * " + value.v + ";\n\n";
   }
   else erro( "Operacao nao permitida: " + oper.v + value.v);
 }
