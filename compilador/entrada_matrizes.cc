@@ -6,7 +6,7 @@ int main() {
     for (j=0; j < 4; j++) {
       a[i][j] = i+j;
     }
-  }  
+  }
   
   for (i=0; i < 4; i++) {
     for (j=0; j < 10; j++) {
@@ -49,4 +49,6 @@ int main() {
     }
     printf("\n");
   }
+  
+  printf("\n");
 }

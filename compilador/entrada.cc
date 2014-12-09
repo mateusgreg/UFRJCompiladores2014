@@ -1,10 +1,10 @@
-int james(int& x){
-  printf("James\n");
-  x++;
-  return x;
-}
+//int james(int& x){
+//  printf("James\n");
+//  x++;
+//  return x;
+//}
 
-int foo(int y, int &w, int xpto) {
+int foo(int y, int w, int xpto) {
   int z;
   w = 10;
   z = y + w + xpto;
@@ -76,9 +76,9 @@ int main() {
   scanf(s);
   printf("Você digitou: " + s + "\n");
 
-  printf(james(&a));
-  printf("\n" + z + "\n");
-  james(&z);
+  //printf(james(&a));
+  //printf("\n" + z + "\n");
+  //james(&z);
   
   printf("\n");
   
@@ -95,10 +95,10 @@ int main() {
   z = 17;
   
   printf("\n");
-  printf(james(&z) + "\n");
+  //printf(james(&z) + "\n");
   
   printf("\n");
-  printf("foo: " + foo(1, &z, 20) + "\n");
+  printf("foo: " + foo(1, z, 20) + "\n");
   
   printf("\n");
   printf("z: " + z + "\n");
