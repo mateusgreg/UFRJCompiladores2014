@@ -69,6 +69,7 @@ int toInt( string n );
 string toStr( int n );
 string toUpperString( string input );
 
+void geraCodigoValorVetor( Atributo* SS, const Atributo& id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoScanf( Atributo* SS, const Atributo& id, string indice1 = "0", string indice2 = "0" );
 void geraCodigoAtribuicao( Atributo* SS, Atributo& lvalue, const Atributo& rvalue, string indice1 = "0", string indice2 = "0" );
 Atributo geraCodigoIndice( const Tipo& t, string id, string indice1 = "0", string indice2 = "0" );
@@ -477,21 +478,9 @@ VALOR : CONST_INT
              erro( "Variavel nao declarada: " + $1.v );
         }
       | TK_ID '[' INDICE ']'
-        { if( buscaVariavelTS( ts, $1.v, &$$.t ) ) {
-	     Atributo indice = geraCodigoIndice( $$.t, $1.v, $3.v );
-	     $$.c = indice.c;
-             $$.v = $1.v + "[" + indice.v + "]";
-          }else
-             erro( "Variavel nao declarada: " + $1.v );
-        }
+        { geraCodigoValorVetor( &$$, $1, $3.v ); }
       | TK_ID '[' INDICE ']' '[' INDICE ']'
-        { if( buscaVariavelTS( ts, $1.v, &$$.t ) ) {
-             Atributo indice = geraCodigoIndice( $$.t, $1.v, $3.v, $6.v );
-	     $$.c = indice.c;
-             $$.v = $1.v + "[" + indice.v + "]";
-          }else
-             erro( "Variavel nao declarada: " + $1.v );
-        }
+        { geraCodigoValorVetor( &$$, $1, $3.v, $6.v ); }
       | FUN_PROC
         { $$ = $1; }
       | FUN_SORT
@@ -526,11 +515,7 @@ INDICE : CONST_INT
        ;
        
 CMD_PRINTF : TK_PRINTF '(' VALOR STR_PRINTF ')'
-	     { if ( $3.t.nDim == 0)
-                 $$.c = $3.c + "  printf( \"%" + obterCharDeDeclaracaoParaTipo($3.t.nome) + "\", " + $3.v + " )" + $4.c;
-               else
-                 $$.c = $3.c + "  printf( \"%" + obterCharDeDeclaracaoParaTipo($3.t.nome) + "\", &" + $3.v + " )" + $4.c;
-             }
+	     { $$.c = $3.c + "  printf( \"%" + obterCharDeDeclaracaoParaTipo($3.t.nome) + "\", " + $3.v + " )" + $4.c; }
            ;
 
 STR_PRINTF : '+' VALOR STR_PRINTF
@@ -578,13 +563,16 @@ string geraDeclaracaoTemporarias(string bloco) {
   for( int i = 0; i < n_var_temp[bloco + "+int"]; i++ )
     c += "  int temp_int_" + toStr( i + 1 ) + ";\n";
 
-    for( int i = 0; i < n_var_temp[bloco + "+char"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+char"]; i++ )
     c += "  char temp_char_" + toStr( i + 1 ) + ";\n";
+  
+  for( int i = 0; i < n_var_temp[bloco + "+charptr"]; i++ )
+    c += "  char* temp_charptr_" + toStr( i + 1 ) + ";\n";
     
   for( int i = 0; i < n_var_temp[bloco + "+double"]; i++ )
     c += "  double temp_double_" + toStr( i + 1 ) + ";\n";
 
-    for( int i = 0; i < n_var_temp[bloco + "+float"]; i++ )
+  for( int i = 0; i < n_var_temp[bloco + "+float"]; i++ )
     c += "  float temp_float_" + toStr( i + 1 ) + ";\n";
     
   for( int i = 0; i < n_var_temp[bloco + "+string"]; i++ )
@@ -862,19 +850,16 @@ string geraCodigoAtribuicaoVariavelSimples( const Atributo& lvalue, const Atribu
   
   if( lvalue.t.nome == "string" ) {
     if ( rvalue.t.nome == "string" ) {
-      if ( rvalue.t.nDim == 0 )
-        return "  strncpy( " + lvalue.v + ", " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
-	       "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
-      else
-        return "  strncpy( " + lvalue.v + ", &" + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
-	       "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
+      return "  strncpy( " + lvalue.v + ", " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+             "  " + lvalue.v + "[" + toStr( MAX_STR - 1 ) + "] = 0;\n";
     }
     if ( rvalue.t.nome == "char" ) {
       return "  " + lvalue.v + "[0] = " + rvalue.v + ";\n"
-	     "  " + lvalue.v + "[1] = 0;\n";
+             "  " + lvalue.v + "[1] = 0;\n";
     }
-  } else return "  " + lvalue.v + " = " + rvalue.v + ";\n";
-  
+  }else {
+    return "  " + lvalue.v + " = " + rvalue.v + ";\n";
+  }
 }
 
 string geraCodigoAtribuicaoVetor( const Atributo& lvalue, const Atributo& rvalue, string indice1, string indice2 ) {
@@ -885,21 +870,15 @@ string geraCodigoAtribuicaoVetor( const Atributo& lvalue, const Atributo& rvalue
     string varIndiceFimString = geraTemp ( Tipo( "int" ) );
     
     if ( rvalue.t.nome == "string" ) {
-      if ( rvalue.t.nDim == 0 ) {
-        codigoTemporarias = indice.c +
-                            "  " + varIndiceFimString + " = " + indice.v + " + " + toStr( MAX_STR - 1 ) + ";\n";
-        codigoAtrib = "  strncpy( &" + lvalue.v + "[" + indice.v + "], " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
-                      "  " + lvalue.v + "[" + varIndiceFimString + "] = 0;\n";
-        
-        return codigoTemporarias + codigoAtrib;
-      }else {
-         codigoTemporarias = indice.c +
-                             "  " + varIndiceFimString + " = " + indice.v + " + " + toStr( MAX_STR - 1 ) + ";\n";
-         codigoAtrib = "  strncpy( &" + lvalue.v + "[" + indice.v + "], &" + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
-                       "  " + lvalue.v + "[" + varIndiceFimString + "] = 0;\n";
-         
-         return codigoTemporarias + codigoAtrib;
-      }
+      string varTempPtrLvalue = geraTemp ( Tipo ( "charptr" ) );
+      
+      codigoTemporarias = indice.c +
+                          "  " + varIndiceFimString + " = " + indice.v + " + " + toStr( MAX_STR - 1 ) + ";\n"
+                          "  " + varTempPtrLvalue + " = " + lvalue.v + "+" + indice.v + ";\n";
+      codigoAtrib = "  strncpy( " + varTempPtrLvalue + ", " + rvalue.v + ", " + toStr( MAX_STR - 1 ) + " );\n"
+                    "  " + lvalue.v + "[" + varIndiceFimString + "] = 0;\n";
+      
+      return codigoTemporarias + codigoAtrib;
     }
     
     if ( rvalue.t.nome == "char" ) {
@@ -916,6 +895,34 @@ string geraCodigoAtribuicaoVetor( const Atributo& lvalue, const Atributo& rvalue
     
     return codigoTemporarias + codigoAtrib;
   }
+}
+
+void geraCodigoValorVetor( Atributo* SS, const Atributo& id, string indice1, string indice2 ) {
+  if( buscaVariavelTS( ts, id.v, &SS->t ) ) {
+    Atributo indice = geraCodigoIndice( SS->t, id.v, indice1, indice2 );
+    
+    string nomeVarTemp = geraTemp ( Tipo ( SS->t ) );
+    Atributo lvalueTemp = Atributo();
+    lvalueTemp.t = Tipo ( SS->t );
+    lvalueTemp.v = nomeVarTemp;
+    
+    Atributo rvalueTemp = Atributo();
+    rvalueTemp.t = Tipo ( SS->t );
+    
+    if ( rvalueTemp.t.nome == "string" ) {
+      string varTempPtrRvalue = geraTemp ( Tipo ( "charptr" ) );
+      rvalueTemp.c = "  " + varTempPtrRvalue + " = " + id.v + "+" + indice.v + ";\n";
+      rvalueTemp.v = varTempPtrRvalue;
+    }else {
+      rvalueTemp.v = id.v + "[" + indice.v + "]";
+    }
+    
+    SS->c = indice.c + "\n" +
+            rvalueTemp.c +
+            geraCodigoAtribuicaoVariavelSimples( lvalueTemp, rvalueTemp );
+    SS->v = nomeVarTemp;
+  }else
+    erro( "Variavel nao declarada: " + id.v );
 }
 
 Atributo geraCodigoIndice( const Tipo& t, string id, string indice1, string indice2 ) {
