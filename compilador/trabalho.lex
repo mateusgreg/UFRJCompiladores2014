@@ -15,10 +15,9 @@ DEFAULT  [Dd][Ee][Ff][Aa][Uu][Ll][Tt]
 BREAK    [Bb][Rr][Ee][Aa][Kk]
 INTERVAL [Ii][Nn][Tt][Ee][Rr][Vv][Aa][Ll]
 FILTER   [Ff][Ii][Ll][Tt][Ee][Rr]
+FOREACH  [Ff][Oo][Rr][Ee][Aa][Cc][Hh]
 FIRSTN   [Ff][Ii][Rr][Ss][Tt][Nn]
 LASTN    [Ll][Aa][Ss][Tt][Nn]
-FOREACH  [Ff][Oo][Rr][Ee][Aa][Cc][Hh]
-IN       [Ii][Nn]
 
 INT     {NUMERO}+
 DOUBLE  {NUMERO}+("."{NUMERO}+)?
@@ -51,13 +50,12 @@ COMMENT "//".*
 {BREAK}    { yylval = Atributo( yytext ); return TK_BREAK; }
 {INTERVAL} { yylval = Atributo( yytext ); return TK_INTERVAL; }
 {FILTER}   { yylval = Atributo( yytext ); return TK_FILTER; }
+{FOREACH}  { yylval = Atributo( yytext ); return TK_FOR_EACH; }
 {FIRSTN}   { yylval = Atributo( yytext ); return TK_FIRST_N; }
 {LASTN}    { yylval = Atributo( yytext ); return TK_LAST_N; }
 "sort"     { yylval = Atributo( yytext ); return TK_SORT; }
 "split"    { yylval = Atributo( yytext ); return TK_SPLIT; }
 "merge"    { yylval = Atributo( yytext ); return TK_MERGE; }
-{FOREACH}  { yylval = Atributo( yytext ); return TK_FOR_EACH; }
-{IN}       { yylval = Atributo( yytext ); return TK_IN; }
 
 "int"      { yylval = Atributo( "", yytext ); return TK_INT; }
 "char"     { yylval = Atributo( "", yytext ); return TK_CHAR; }

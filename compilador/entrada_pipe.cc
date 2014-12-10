@@ -5,7 +5,8 @@ int main() {
   for (i=0; i <= 9; i++)
     tab[i] = i;
   
-  INTERVAL[ 1 .. 40 ]
+  INTERVAL[ 1 .. 10 ]
+    => firstN[ 5 ]
     => fIlTEr[ (x*x) % 1 == 0 ]
     => fiLTEr[ x % 2 == 0 ]
     => firsTn[ 3 ]
