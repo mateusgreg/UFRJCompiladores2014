@@ -16,6 +16,7 @@ BREAK    [Bb][Rr][Ee][Aa][Kk]
 INTERVAL [Ii][Nn][Tt][Ee][Rr][Vv][Aa][Ll]
 FILTER   [Ff][Ii][Ll][Tt][Ee][Rr]
 FOREACH  [Ff][Oo][Rr][Ee][Aa][Cc][Hh]
+IN       [Ii][Nn]
 FIRSTN   [Ff][Ii][Rr][Ss][Tt][Nn]
 LASTN    [Ll][Aa][Ss][Tt][Nn]
 
@@ -51,6 +52,7 @@ COMMENT "//".*
 {INTERVAL} { yylval = Atributo( yytext ); return TK_INTERVAL; }
 {FILTER}   { yylval = Atributo( yytext ); return TK_FILTER; }
 {FOREACH}  { yylval = Atributo( yytext ); return TK_FOR_EACH; }
+{IN}       { yylval = Atributo( yytext ); return TK_IN; }
 {FIRSTN}   { yylval = Atributo( yytext ); return TK_FIRST_N; }
 {LASTN}    { yylval = Atributo( yytext ); return TK_LAST_N; }
 "sort"     { yylval = Atributo( yytext ); return TK_SORT; }

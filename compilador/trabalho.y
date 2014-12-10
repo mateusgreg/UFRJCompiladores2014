@@ -53,6 +53,7 @@ TF tf; // Tabela de funções
 string pipeAtivo; // Tipo do pipe ativo
 string pipeAtivoInicio;
 string pipeAtivoFim;
+string contadorPipe;
 string passoPipeAtivo; // Label 'fim' do pipe ativo
 
 Tipo tipoResultado( Tipo a, string operador, Tipo b );
@@ -117,7 +118,7 @@ void yyerror(const char *);
 %}
 
 %token TK_MAIN TK_ID TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO TK_SWITCH TK_CASE TK_DEFAULT TK_BREAK
-%token TK_PIPE TK_X TK_INTERVAL TK_FILTER TK_FOR_EACH TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT 
+%token TK_PIPE TK_X TK_INTERVAL TK_FILTER TK_FOR_EACH TK_IN TK_FIRST_N TK_LAST_N TK_SPLIT TK_MERGE TK_SORT 
 %token TK_AND TK_OR TK_IGUAL TK_DIFERENTE TK_MAIOR_IGUAL TK_MENOR_IGUAL TK_ADICIONA_UM TK_DIMINUI_UM TK_FROM_TO 
 %token TK_INT TK_CHAR TK_BOOLEAN TK_FLOAT TK_DOUBLE TK_STRING TK_VOID
 %token CONST_INT CONST_CHAR CONST_BOOLEAN CONST_FLOAT CONST_DOUBLE CONST_STRING
@@ -300,6 +301,7 @@ COMANDO_BLOCO : CMD_IF_ELSE
               | CMD_SWITCH
               | CMD_INTERVAL
               | CMD_FILTER
+              | CMD_FOREACH
               ;
 
 CMD_IF_ELSE : TK_IF '(' OPERACAO ')' BLOCO_COMANDO CMD_ELSE
@@ -360,7 +362,7 @@ CMD_PIPE : TK_INTERVAL '[' START_PIPE TK_FROM_TO INI_PIPE ']' PROCS CONSOME
             condicao.v = geraTemp( Tipo( "bool" ) ); 
             condicao.c = "  " + condicao.v + " = " + "x_" + pipeAtivo + 
                          " <= " + $5.v + ";\n";
-            passo.c = passoPipeAtivo + ":\n" + 
+            passo.c = "\n" + passoPipeAtivo + ":\n" + 
                       "  x_" + pipeAtivo + " = x_" + pipeAtivo + " + 1;\n";
             cmd.c = $7.c + $8.c;
             
@@ -379,8 +381,10 @@ START_PIPE : OPERACAO
 INI_PIPE : OPERACAO
            { $$ = $1;
              pipeAtivo = $1.t.nome;
+             contadorPipe = "x_" + pipeAtivo + "_contador";
              pipeAtivoFim = $1.v;
-             passoPipeAtivo = geraLabel( "passo_pipe" ); }
+             passoPipeAtivo = geraLabel( "passo_pipe" ); 
+             $$.c = $$.c + " " + contadorPipe + " = 0;\n"; }
          ;    
         
 PROCS : TK_PIPE PROC PROCS 
@@ -391,10 +395,11 @@ PROCS : TK_PIPE PROC PROCS
       
 PROC : TK_FILTER '[' OPERACAO ']'
        { geraCodigoFilter( &$$, $3 ); }
-     | TK_FIRST_N '[' INDICE ']'
+     | TK_FIRST_N '[' OPERACAO ']'
        { geraCodigoFirstN( &$$, $3 ); }
-     | TK_LAST_N '[' INDICE ']'
+     | TK_LAST_N '[' OPERACAO ']'
        { geraCodigoLastN( &$$, $3 ); }
+     | TK_SORT '[' TK_X ']'
      ;
       
 CONSOME : TK_FOR_EACH '[' COMANDO ']'
@@ -418,6 +423,11 @@ CMD_INTERVAL : TK_INTERVAL '(' TK_ID '=' INDICE TK_FROM_TO INDICE ')' BLOCO_COMA
 //#Dentro de OPERACAO haverá acesso à variável INDEX que diz a posição em que o filtro se encontra
 CMD_FILTER : TK_FILTER '(' OPERACAO ')' BLOCO_COMANDO
            ;
+
+//#TK_ID deve ser array 	
+CMD_FOREACH : TK_FOR_EACH '(' TK_ID TK_IN TK_ID ')' BLOCO_COMANDO 	
+              { geraCodigoForEach(&$$, $5, $3, $7); } 	
+            ;
 
 //#TK_ID deve ser array 
 FUN_SORT : TK_SORT '(' TK_ID ')'
@@ -626,8 +636,11 @@ string geraLabel( string cmd ) {
 
 string geraDeclaracaoVarPipe() {
   return "  int x_int;\n"
+         "  int x_int_contador;\n"
          "  double x_double;\n"
-         "  float x_float;\n";
+         "  double x_double_contador;\n"
+         "  float x_float;\n"
+         "  float x_float_contador;\n";
 }
 string geraDeclaracaoTemporarias(string bloco) {
   string c;
@@ -817,17 +830,21 @@ void geraCodigoFilter( Atributo* SS, const Atributo& condicao ) {
 
 void geraCodigoFirstN( Atributo* SS, const Atributo& totalN ) {
   *SS = Atributo();
-  SS->v = geraTemp( Tipo( "bool" ) );
+  string condContador = geraTemp( Tipo( "bool" ) );
+  
   SS->c = totalN.c + 
-          "  " + SS->v + " = x_" + pipeAtivo + ">" + pipeAtivoInicio + " - 1 + " + totalN.v + ";\n" +
-          "  if( " + SS->v + " ) goto " + passoPipeAtivo + ";\n";
+          " " + contadorPipe + " = " + contadorPipe + " + 1;\n"
+          "  " + condContador + " = " + contadorPipe + ">" + totalN.v + ";\n" +
+          "  if( " + condContador + " ) goto " + passoPipeAtivo + ";\n";
 }
 
 void geraCodigoLastN( Atributo* SS, const Atributo& totalN ) {
+  string temp = geraTemp( Tipo( "int" ) );
   *SS = Atributo();
   SS->v = geraTemp( Tipo( "bool" ) );
   SS->c = totalN.c + 
-          "  " + SS->v + " = x_" + pipeAtivo + "<=" + pipeAtivoFim + " - " + totalN.v + ";\n" +
+          "  " + temp + " = " + pipeAtivoFim + " - " + totalN.v + ";\n" +
+          "  " + SS->v + " = x_" + pipeAtivo + "<=" + temp + ";\n" +
           "  if( " + SS->v + " ) goto " + passoPipeAtivo + ";\n";
 }
 
@@ -855,6 +872,28 @@ void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinici
           cmds.c + "  " + variavel.v + tokenBiggerSmaller + ";\n" +
           "  goto " + intvrCond + ";\n  " + 
           intvrFim + ":\n";
+}
+
+void geraCodigoForEach( Atributo* SS, Atributo& variavel, Atributo& indice, const Atributo& cmds ) { 	
+  string feachCond = geraLabel( "feach_cond" ), 
+  feachFim = geraLabel( "feach_fim" ); 
+  string valorNotCond = geraTemp( Tipo( "bool" ) ); 
+
+  *SS = Atributo(); 
+  if( buscaVariavelTS( ts, indice.v, &indice.t ) ){ 
+    if( buscaVariavelTS( ts, variavel.v, &variavel.t ) ){ 
+      SS->c = SS->c + variavel.c + 
+              "  x_int = 0;\n" + 
+              "  " + indice.v + "= " + variavel.v + "[0];\n" + 
+              "  " + feachCond + ":\n" + 
+              "  " + valorNotCond + " = x_int >" + toStr(variavel.t.d1-1) + ";\n" + 
+              "  if( " + valorNotCond + " ) goto " + feachFim + ";\n" + cmds.c + 
+              "  x_int++;\n" + 
+              "  " + indice.v + "= " + variavel.v + "[x_int];\n" + 
+              "  goto " + feachCond + ";\n " +
+              feachFim + ":\n";
+    }
+  }
 }
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo, const Atributo& id ) {
