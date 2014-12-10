@@ -58,6 +58,8 @@ string geraTemp( Tipo tipo );
 string geraLabel( string cmd );
 string geraDeclaracaoTemporarias(string bloco);
 string geraDeclaracaoVarPipe();
+string tamanhoPipe;
+string contadorPipe;
 
 string obterCharDeDeclaracaoParaTipo(string tipo);
 void insereVariavelTS( TS&, string nomeVar, Tipo tipo );
@@ -91,6 +93,8 @@ void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinici
 void geraCodigoForEach( Atributo* SS, Atributo& variavel, Atributo& indice, const Atributo& cmds );
 
 void geraCodigoFilter( Atributo* SS, const Atributo& condicao );
+void geraCodigoFirstN( Atributo* SS, const Atributo& n );
+void geraCodigoLastN( Atributo* SS, const Atributo& n );
 
 void geraDeclaracaoVariavel( Atributo* SS, const Atributo& tipo,
                                            const Atributo& id );
@@ -357,7 +361,7 @@ CMD_PIPE : TK_INTERVAL '[' OPERACAO TK_FROM_TO INI_PIPE ']' PROCS CONSOME
             condicao.v = geraTemp( Tipo( "bool" ) ); 
             condicao.c = "  " + condicao.v + " = " + "x_" + pipeAtivo + 
                          " <= " + $5.v + ";\n";
-            passo.c = passoPipeAtivo + ":\n" + 
+            passo.c = "\n" + passoPipeAtivo + ":\n" + 
                       "  x_" + pipeAtivo + " = x_" + pipeAtivo + " + 1;\n";
             cmd.c = $7.c + $8.c;
             
@@ -368,11 +372,17 @@ CMD_PIPE : TK_INTERVAL '[' OPERACAO TK_FROM_TO INI_PIPE ']' PROCS CONSOME
         ;
 
 INI_PIPE : OPERACAO
-           { $$ = $1;
-             pipeAtivo = $1.t.nome;
-             passoPipeAtivo = geraLabel( "passo_pipe" ); }
+           { pipeAtivo = $1.t.nome;
+             contadorPipe = "x_" + pipeAtivo + "_contador";
+             tamanhoPipe = $1.v;
+             passoPipeAtivo = geraLabel( "passo_pipe" );
+             
+             $$ = $1;
+             $$.c = $$.c +
+                    "  " + contadorPipe + " = 0;\n";
+           }
          ;    
-        
+         
 PROCS : TK_PIPE PROC PROCS 
         { $$.c = $2.c + $3.c; }
       | TK_PIPE
@@ -381,6 +391,11 @@ PROCS : TK_PIPE PROC PROCS
       
 PROC : TK_FILTER '[' OPERACAO ']'
        { geraCodigoFilter( &$$, $3 ); }
+     | TK_FIRST_N '[' OPERACAO ']'
+       { geraCodigoFirstN( &$$, $3 ); }
+     | TK_LAST_N '[' OPERACAO ']'
+       { geraCodigoLastN( &$$, $3 ); }
+     | TK_SORT '[' TK_X ']'
      ;
       
 CONSOME : TK_FOR_EACH '[' COMANDO ']'
@@ -617,8 +632,11 @@ string geraLabel( string cmd ) {
 
 string geraDeclaracaoVarPipe() {
   return "  int x_int;\n"
+         "  int x_int_contador;\n"
          "  double x_double;\n"
-         "  float x_float;\n";
+         "  double x_double_contador;\n"
+         "  float x_float;\n"
+         "  float x_float_contador;\n";
 }
 string geraDeclaracaoTemporarias(string bloco) {
   string c;
@@ -804,6 +822,29 @@ void geraCodigoFilter( Atributo* SS, const Atributo& condicao ) {
   SS->c = condicao.c + 
           "  " + SS->v + " = !" + condicao.v + ";\n" +
           "  if( " + SS->v + " ) goto " + passoPipeAtivo + ";\n";
+}
+
+void geraCodigoFirstN( Atributo* SS, const Atributo& n ) {
+  *SS = Atributo();
+  string condContador = geraTemp( Tipo( "bool" ) );
+  
+  SS->c = "\n\n\n" +
+          n.c +
+          "  " + contadorPipe + " = " + contadorPipe + " + 1;\n"
+          "  " + condContador + " = " + contadorPipe + " > " + n.v + ";\n"
+          "  if( " + condContador + ") goto " + passoPipeAtivo + ";\n"
+          "\n\n";
+}
+
+void geraCodigoLastN( Atributo* SS, const Atributo& n ) {
+  *SS = Atributo();
+  string condicao = geraTemp( Tipo( "bool" ) );
+  string temp = geraTemp( Tipo( "int" ) );
+  
+  SS->c = n.c +
+          temp + " = " + tamanhoPipe + " - " + n.v + ";\n" +
+          condicao + " = " + contadorPipe + " < " + temp + ";\n"
+          " if( " + condicao + " ) goto " + passoPipeAtivo + ";\n";
 }
 
 void geraCodigoInterval( Atributo* SS, const Atributo& variavel, string valinicial, string valfinal, const Atributo& cmds ) {
