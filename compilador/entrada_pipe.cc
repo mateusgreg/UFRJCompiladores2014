@@ -6,9 +6,8 @@ int main() {
     tab[i] = i;
   
   INTERVAL[ 1 .. 10 ]
-    => firstN[ 5 ]
     => fIlTEr[ (x*x) % 1 == 0 ]
     => fiLTEr[ x % 2 == 0 ]
-    => firsTn[ 3 ]
+    => firsTn[ 4 ]
     => forEach[ printf( x + "\n" ); ];
 }
